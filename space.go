@@ -106,14 +106,14 @@ func (s *Space) get_space_id() uint64 {
 }
 
 func (s *Space) index(root_page_number uint64, record_describer interface{}) *BTreeIndex {
-	println("get root space index")
+
 	return newBTreeIndex(s, root_page_number, record_describer)
 }
 
 func (s *Space) each_index() {
-	println("each index 获取切片，计算切片的大小")
+
 	res := s.each_index_root_page_number()
-	println(res)
+	println("eache_index result=========>", res)
 
 }
 

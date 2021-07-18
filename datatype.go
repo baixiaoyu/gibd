@@ -3,25 +3,83 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
-type IntegerType struct {
+type BitType struct {
 	name  string
 	width int
 }
 
+func newBitType(base_type string, modifiers string, properties string) *BitType {
+	nbits := len(modifiers)
+
+	if nbits < 0 || nbits > 64 {
+		return nil
+	}
+	width := (nbits + 7) / 8
+	name := make_name(base_type, modifiers, properties)
+	return &BitType{width: width, name: name}
+}
+
+func (bit *BitType) value(data int) int {
+	return data
+}
+
+type IntegerType struct {
+	name     string
+	width    int
+	unsigned bool
+}
+
 func newIntegerType(base_type string, modifiers string, properties string) *IntegerType {
 	width := base_type_width_map[base_type]
-	//unsigned := strings.Contains(properties, "UNSIGNED")
+	unsigned := strings.Contains(properties, "UNSIGNED")
 	name := make_name(base_type, modifiers, properties)
 	return &IntegerType{
-		width: width, name: name,
+		width: width, name: name, unsigned: unsigned,
 	}
 
 }
 
+func (integer *IntegerType) value(data []byte, index *Index) int64 {
+	nbits := integer.width * 8
+	if integer.unsigned {
+		return integer.get_uint(data, nbits, index)
+	} else {
+		return integer.get_int(data, nbits, index)
+	}
+}
+
+func (integer *IntegerType) get_uint(data []byte, nbits int, index *Index) int64 {
+	return int64(index.Page.BytesToUIntLittleEndian(data))
+}
+func (integer *IntegerType) get_int(data []byte, nbits int, index *Index) int64 {
+	return int64(index.Page.BytesToIntLittleEndian(data))
+}
+
+type TransactionIdType struct {
+	name  string
+	width int
+}
+
+func newTransactionIdType(base_type string, modifiers string, properties string) *TransactionIdType {
+	width := 6
+	name := make_name(base_type, modifiers, properties)
+	return &TransactionIdType{
+		name:  name,
+		width: width,
+	}
+}
+
+func (t *TransactionIdType) read(offset uint64, p *Page) uint64 {
+	transaction_id := uint64(p.bufferReadat(int64(offset), 6))
+	return transaction_id
+
+}
+
 func make_name(base_type string, modifiers string, properties string) string {
-	name := base_type + modifiers
+	name := base_type + modifiers + properties
 	return name
 }
 

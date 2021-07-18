@@ -145,7 +145,6 @@ func main() {
 	page := space.page(uint64(page_no))
 	if page.FileHeader.Page_type == 3 {
 		//index := space.index(page_no)
-
 	}
 
 	switch mode {

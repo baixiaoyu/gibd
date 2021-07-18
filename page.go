@@ -158,6 +158,35 @@ func (p *Page) BytesToUIntLittleEndian(b []byte) int {
 	}
 }
 
+func (p *Page) BytesToIntLittleEndian(b []byte) int {
+
+	if len(b) == 3 {
+		b = append([]byte{0}, b...)
+	}
+	bytesBuffer := bytes.NewBuffer(b)
+	switch len(b) {
+	case 1:
+		var tmp int8
+		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
+		return int(tmp)
+	case 2:
+		var tmp int16
+		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
+		return int(tmp)
+	case 4:
+		var tmp int32
+		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
+		return int(tmp)
+
+	case 8:
+		var tmp int64
+		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
+		return int(tmp)
+	default:
+		return 0
+	}
+}
+
 func (p Page) String() string {
 
 	page_offset := p.bufferReadat(4, 4)

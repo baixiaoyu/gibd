@@ -9,10 +9,11 @@ import (
 type Field struct {
 	FieldName string `json:"fieldname"`
 	// FieldDesc string `json:"fieldesc"`
-	DataType string `json:"datatype"`
-	IsNull   string `json:"isnull"`
-	Length   int    `json:"length"`
-	Is_key   bool   `json:"is_key"`
+	DataType   string `json:"datatype"`
+	Properties string `json:Properties`
+	IsNull     string `json:"isnull"`
+	Length     int    `json:"length"`
+	Is_key     bool   `json:"is_key"`
 }
 type SysTablesPrimary struct {
 	TAB_TYPE     string `json:"tab_type"`
@@ -27,14 +28,14 @@ type SysTablesPrimary struct {
 }
 
 func newSysTablesPrimary() *SysTablesPrimary {
-	field_name := Field{"NAME", "VARCHAR(100)", "NOT_NULL", 100, true}
-	field_id := Field{"ID", "UNSIGNED BIGINT", "NOT_NULL", 0, false}
-	field_n_cols := Field{"N_COLS", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_type := Field{"TYPE", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_mix_id := Field{"MIX_ID", "UNSIGNED BIGINT", "NOT_NULL", 0, false}
-	field_mix_len := Field{"MIX_LEN", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_cluster_name := Field{"CLUSTER_NAME", "VARCHAR(100)", "NOT_NULL", 100, false}
-	field_space := Field{"SPACE", "UNSIGNED INT", "NOT_NULL", 0, false}
+	field_name := Field{"NAME", "VARCHAR(100)", "", "NOT_NULL", 100, true}
+	field_id := Field{"ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_n_cols := Field{"N_COLS", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_type := Field{"TYPE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_mix_id := Field{"MIX_ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_mix_len := Field{"MIX_LEN", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_cluster_name := Field{"CLUSTER_NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
+	field_space := Field{"SPACE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
 	return &SysTablesPrimary{"clustered", field_name, field_id, field_n_cols, field_type, field_mix_id, field_mix_len, field_cluster_name, field_space}
 }
 
@@ -45,8 +46,8 @@ type SysTablesId struct {
 }
 
 func newSysTablesId() *SysTablesId {
-	field_name := Field{"NAME", "VARCHAR(100)", "NOT_NULL", 100, false}
-	field_id := Field{"ID", "UNSIGNED BIGINT", "NOT_NULL", 0, true}
+	field_name := Field{"NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
+	field_id := Field{"ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, true}
 
 	return &SysTablesId{"secondary", field_name, field_id}
 }
@@ -63,13 +64,13 @@ type SysColumnsPrimary struct {
 }
 
 func newSysColumnsPrimary() *SysColumnsPrimary {
-	field_table_id := Field{"TABLE_ID", "UNSIGNED BIGINT", "NOT_NULL", 0, true}
-	field_pos := Field{"POS", "UNSIGNED INT", "NOT_NULL", 0, true}
-	field_name := Field{"NAME", "VARCHAR(100)", "NOT_NULL", 100, false}
-	field_mtype := Field{"MTYPE", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_prtype := Field{"PRTYPE", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_len := Field{"LEN", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_prec := Field{"PREC", "UNSIGNED INT", "NOT_NULL", 0, false}
+	field_table_id := Field{"TABLE_ID", "BIGINT", "", "NOT_NULL", 0, true}
+	field_pos := Field{"POS", "INT", "UNSIGNED", "NOT_NULL", 0, true}
+	field_name := Field{"NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
+	field_mtype := Field{"MTYPE", "INT", "", "NOT_NULL", 0, false}
+	field_prtype := Field{"PRTYPE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_len := Field{"LEN", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_prec := Field{"PREC", "INT", "UNSIGNED", "NOT_NULL", 0, false}
 
 	return &SysColumnsPrimary{"clustered", field_table_id, field_pos, field_name, field_mtype, field_prtype, field_len, field_prec}
 }
@@ -86,13 +87,13 @@ type SysIndexesPrimary struct {
 }
 
 func newSysIndexesPrimary() *SysIndexesPrimary {
-	field_table_id := Field{"TABLE_ID", "UNSIGNED BIGINT", "NOT_NULL", 0, true}
-	field_id := Field{"ID", "UNSIGNED BIGINT", "NOT_NULL", 0, true}
-	field_name := Field{"NAME", "VARCHAR(100)", "NOT_NULL", 100, false}
-	field_n_field := Field{"N_FIELDS", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_type := Field{"TYPE", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_space := Field{"SPACE", "UNSIGNED INT", "NOT_NULL", 0, false}
-	field_page_no := Field{"PAGE_NO", "UNSIGNED INT", "NOT_NULL", 0, false}
+	field_table_id := Field{"TABLE_ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, true}
+	field_id := Field{"ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, true}
+	field_name := Field{"NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
+	field_n_field := Field{"N_FIELDS", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_type := Field{"TYPE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_space := Field{"SPACE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_page_no := Field{"PAGE_NO", "INT", "UNSIGNED", "NOT_NULL", 0, false}
 
 	return &SysIndexesPrimary{"clustered", field_table_id, field_id, field_name, field_n_field, field_type, field_space, field_page_no}
 }
@@ -105,9 +106,9 @@ type SysFieldsPrimary struct {
 }
 
 func newSysFieldsPrimary() *SysFieldsPrimary {
-	field_index_id := Field{"INDEX_ID", "UNSIGNED BIGINT", "NOT_NULL", 0, true}
-	field_pos := Field{"POS", "UNSIGNED INT", "NOT_NULL", 0, true}
-	field_col_name := Field{"COL_NAME", "VARCHAR(100)", "NOT_NULL", 100, false}
+	field_index_id := Field{"INDEX_ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, true}
+	field_pos := Field{"POS", "INT", "UNSIGNED", "NOT_NULL", 0, true}
+	field_col_name := Field{"COL_NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
 
 	return &SysFieldsPrimary{"clustered", field_index_id, field_pos, field_col_name}
 }
@@ -151,25 +152,27 @@ func (dh *DataDictionary) each_table() {
 }
 
 func (dh *DataDictionary) each_index() []*Index {
-	//println("datadic each_index SYS_INDEXES,PRIMARY")
+
 	res := dh.each_record_from_data_dictionary_index("SYS_INDEXES", "PRIMARY")
-	println(res)
+	println("each_record_from_data_dictionary_index=====>size is:", res)
+
 	for i := 0; i < len(res); i++ {
-		println(res[i])
+		println("each_index each index======>%v", res[i])
+
 	}
-	println("xxxxxxxx")
+
 	var tmp_index []*Index
 	return tmp_index
 }
 
 func (dh *DataDictionary) each_record_from_data_dictionary_index(table string, index string) []*Record {
-	println("each_record_from_data_dictionary_index")
+
 	//跟index
 	rootindex := dh.data_dictionary_index(table, index)
 	records := rootindex.each_record()
 	// 对返回的每个记录进行处理
 
-	println(records)
+	println("each_record_from_data_dictionary_index 所有的记录", records)
 
 	return records
 }
@@ -245,8 +248,7 @@ func (dh *DataDictionary) data_dictionary_index_describer(table_name string, ind
 	if dh.is_data_dictionary_index(table_name, index_name) {
 
 		class_name := DATA_DICTIONARY_RECORD_DESCRIBERS[table_name][index_name]
-		println("get index describer")
-		println(class_name)
+		println("data_dictionary_index_describer get index describer======>", class_name)
 		cls, _ := New(class_name)
 		return cls
 	}
@@ -255,16 +257,26 @@ func (dh *DataDictionary) data_dictionary_index_describer(table_name string, ind
 
 // return and Index object
 func (dh *DataDictionary) data_dictionary_index(table_name string, index_name string) *BTreeIndex {
-	println("data_dictionary_index")
-	table_entry := dh.data_dictionary_indexes().SYS_TABLES
-	res := dh.CheckNestedStruct(&table_entry, table_name, index_name, false, false)
-	index_root_page := res
+	var index_root_page uint64
+	if table_name == "SYS_TABLES" {
+		table_entry := dh.data_dictionary_indexes().SYS_TABLES
+		println("in data_dictionary_index, table_entry ========>", table_entry.PRIMARY)
+		index_root_page = table_entry.PRIMARY
+	} else if table_name == "SYS_INDEXES" {
+		table_entry := dh.data_dictionary_indexes().SYS_INDEXES
+		println("in data_dictionary_index, table_entry ========>", table_entry.PRIMARY)
+		index_root_page = table_entry.PRIMARY
+	}
+
+	//SYS_INDEXES PRIMARY root_page应该是11
+	//SYS_TABLES PRIMARY root_page应该是8
+	//res := dh.CheckNestedStruct(&table_entry, table_name, index_name, false, false)
+	//index_root_page := res
 
 	record_describer := dh.data_dictionary_index_describer(table_name, index_name)
-	println("index_root_page")
-	println(index_root_page)
-	fmt.Printf("x的类型是%T", record_describer)
-	println(record_describer)
+
+	println("data_dictionary_index table_name, index_name,index_root_page=======>", table_name, index_name, index_root_page)
+
 	switch value := record_describer.(type) {
 	case *SysTablesPrimary:
 		record_describer = newSysTablesPrimary()
@@ -279,6 +291,7 @@ func (dh *DataDictionary) data_dictionary_index(table_name string, index_name st
 	default:
 		fmt.Println("description is of a different type%T", value)
 	}
+	println("data_dictionary_index record_describer======>", record_describer)
 
 	return dh.system_space.system_space().index(index_root_page, record_describer)
 
@@ -293,7 +306,6 @@ func (dh *DataDictionary) data_dictionary_indexes() Dict_Index {
 }
 
 func (dh *DataDictionary) each_index_by_space_id(space_id uint64) []*Index {
-	println("each index by space id")
 	return dh.each_index()
 	//根据上面返回的每个记录进行sapce的匹配，匹配的话输出
 }

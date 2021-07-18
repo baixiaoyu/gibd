@@ -24,12 +24,12 @@ var RECORD_TYPES = map[uint64]string{
 	3: "supremum",     // The system "supremum" record.
 }
 
-type FieldDescriptor struct {
-	name      string
-	desc_type uint64
-	value     uint64
-	extern    uint64
-}
+// type FieldDescriptor struct {
+// 	name      string
+// 	desc_type uint64
+// 	value     uint64
+// 	extern    uint64
+// }
 type FsegEntry struct {
 }
 
@@ -37,19 +37,19 @@ type Record struct {
 	Page   *Page
 	record interface{}
 
-	header            *RecordHeader
-	offset            uint64
-	length            uint64
-	next              uint64
-	key               uint64
-	row               uint64
-	transaction_id    uint64
-	roll_pointer      uint64
-	child_page_number uint64
+	// header            *RecordHeader
+	// offset            uint64
+	// length            uint64
+	// next              uint64
+	// key               uint64
+	// row               uint64
+	// transaction_id    uint64
+	// roll_pointer      uint64
+	// child_page_number uint64
 
-	record_type uint64
-	heap_number uint64
-	n_owned     uint64
+	// record_type uint64
+	// heap_number uint64
+	// n_owned     uint64
 }
 
 func newRecord(page *Page, record interface{}) *Record {
