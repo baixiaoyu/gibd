@@ -1,5 +1,4 @@
 # gibd
-这个项目主要是为了学习go和学习如何解析下系统表空间，已经dump数据块，翻译的innodb_ruby项目。
-看不到实际的应用场景，所以只是实现了dump数据字典数据块，和查看系统表空间的功能，别的暂时不去实现了。
-代码中有很多不规范的地方，比如代码风格，以及一些地方实现的不是很高效。
+## Introduction
+This project just for learning golang and learning how to parse innodb blocks.It's a simple version of innodb_ruby,just finished dump dictionary header block and list system space, for datatype, I just finished Integer and varchar TransactionId, RollPointer implementation.
 
