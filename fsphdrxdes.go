@@ -38,7 +38,7 @@ func newFspHdrXdes(page *Page) *FspHdrXdes {
 	}
 }
 func (fsp FspHdrXdes) String() string {
-	println("print fsp")
+
 	res := "fsp header space id: " + strconv.FormatUint(fsp.Header.space_id, 10)
 	return res
 }

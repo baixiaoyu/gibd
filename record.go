@@ -35,21 +35,8 @@ type FsegEntry struct {
 
 type Record struct {
 	Page   *Page
-	record interface{}
-
-	// header            *RecordHeader
-	// offset            uint64
-	// length            uint64
-	// next              uint64
-	// key               uint64
-	// row               uint64
-	// transaction_id    uint64
-	// roll_pointer      uint64
-	// child_page_number uint64
-
-	// record_type uint64
-	// heap_number uint64
-	// n_owned     uint64
+	record interface{} //UserRecord or SystemRecord
+	//	fields map[string]interface{}
 }
 
 func newRecord(page *Page, record interface{}) *Record {
@@ -61,4 +48,24 @@ func newRecord(page *Page, record interface{}) *Record {
 
 func newRecord2() *Record {
 	return &Record{}
+}
+
+func (record *Record) get_fields() map[string]interface{} {
+	fields_hash := make(map[string]interface{})
+	keys := record.record.(*UserRecord).key
+	rows := record.record.(*UserRecord).row
+
+	for _, value := range keys {
+		Log.Info("get_fields() keys name====>%+v\n", value.name)
+		Log.Info("get_fields() keys value====>%+v\n", value.value)
+		fields_hash[value.name] = value.value
+	}
+
+	for _, value := range rows {
+		Log.Info("get_fields() rows name====>%+v\n", value.name)
+		Log.Info("get_fields() rows value====>%+v\n", value.value)
+		fields_hash[value.name] = value.value
+	}
+	return fields_hash
+
 }

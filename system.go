@@ -36,3 +36,13 @@ func (system *System) system_space() *Space {
 	}
 	return nil
 }
+
+func (system *System) each_table_name() []string {
+	var table_names []string
+	tables := system.data_dictionary.each_table()
+	for _, value := range tables {
+		Log.Info("each_table_name===%+v\n", value["NAME"])
+		table_names = append(table_names, value["NAME"].(string))
+	}
+	return table_names
+}

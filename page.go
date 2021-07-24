@@ -35,6 +35,15 @@ type Address struct {
 	Page   uint64 `json:"page"`
 	Offset uint64 `json:"offset"`
 }
+
+func newAddress(Page uint64, Offset uint64) *Address {
+	return &Address{
+		Page:   Page,
+		Offset: Offset,
+	}
+
+}
+
 type FilHeader struct {
 	Checksum  uint64 `json:"checksum"`
 	Offset    uint64 `json:"offset"`
@@ -52,7 +61,6 @@ func (s *FilHeader) lsn_low32(offset uint64) uint64 {
 
 func (filHeader FilHeader) String() string {
 	jsons, _ := json.Marshal(filHeader)
-	println(string(jsons))
 	return string(jsons)
 }
 
@@ -86,11 +94,14 @@ type Page struct {
 }
 
 func newPage(space *Space, buffer *[]byte, page_number uint64) *Page {
-	return &Page{
+	p := &Page{
 		Space:       space,
 		Buffer:      buffer,
 		Page_number: page_number,
 	}
+	p.fil_header()
+	p.fil_trailer()
+	return p
 
 }
 

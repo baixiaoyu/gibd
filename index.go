@@ -58,7 +58,7 @@ type UserRecord struct {
 	sys               []*FieldDescriptor
 	child_page_number uint64
 	transaction_id    uint64
-	roll_pointer      uint64
+	roll_pointer      *Pointer
 	length            uint64
 }
 
@@ -230,7 +230,7 @@ func (index *Index) space_per_record() uint64 {
 }
 func (index *Index) page_header() {
 	jsons, _ := json.Marshal(index.Page)
-	println("page_header=========>", string(jsons))
+	Log.Info("page_header=========>%s", string(jsons))
 
 	n_dir_slots := uint64(index.Page.bufferReadat(int64(index.pos_index_header()), 2))
 	heap_top := uint64(index.Page.bufferReadat(int64(index.pos_index_header())+2, 2))
@@ -264,8 +264,7 @@ func (index *Index) isroot() bool {
 }
 
 func (index *Index) isleaf() bool {
-	//println("level====>")
-	println("isleaf()======>", index.pageHeader.level)
+
 	if index.pageHeader.level == 0 {
 		return true
 	} else {
@@ -274,9 +273,7 @@ func (index *Index) isleaf() bool {
 }
 
 func (index *Index) page(page_number uint64) *Page {
-	println("into index page,create root page")
 	page := index.space.page(page_number)
-
 	page.record_describer = index.record_describer
 	return page
 }
@@ -288,13 +285,13 @@ type RecordCursor struct {
 	Record    *Record
 }
 
-const min = 1
-const max = 999
+const min = 0
+const max = 4294967295
 
 func (rc *RecordCursor) initial_record(offset uint64) *Record {
 	switch offset {
 	case min:
-		println("into initial_record")
+		Log.Info("into initial_record\n")
 		return rc.Index.min_record()
 	case max:
 		return rc.Index.max_record()
@@ -311,47 +308,125 @@ func newRecordCursor(index *Index, offset uint64, direction string) *RecordCurso
 	a.Record = a.initial_record(offset)
 	return &a
 }
-func (rc *RecordCursor) records() []*Record {
-	var records []*Record
-	if rc.Initial == false {
-		return append(records, rc.Record)
+func (rc *RecordCursor) record() *Record {
+	//var records *Record
+	if rc.Initial == true {
+		rc.Initial = false
+		return rc.Record
 	}
 	switch rc.Direction {
 	case "forward":
-		return rc.next_records()
+		return rc.next_record()
 	case "backward":
-		return rc.prev_records()
+		return rc.prev_record()
 	}
 	return nil
 }
-func (rc *RecordCursor) next_records() []*Record {
-	var records []*Record
-	//record := rc.Record.record
 
-	// for rec := rc.Index.record(record.next); rec != rc.Index.supremum() && rec.system_record.offset != record.offset; rec = rc.Index.record(rec.system_record.next) {
-	// 	records = append(records, rec)
+var page_record_cursor_next_record int
 
+func (rc *RecordCursor) next_record() *Record {
+	page_record_cursor_next_record = page_record_cursor_next_record + 1
+	// Log.Info("next_record1111 this record's offset is========>%+v\n", rc.Record.record.(*UserRecord).offset)
+	// Log.Info("next_record_next_record_header_next is========>%+v\n", rc.Record.record.(*UserRecord).header.next)
+
+	rec := rc.Index.record(rc.Record.record.(*UserRecord).header.next)
+	// Log.Info("next_record_next_record is========>%+v\n", rec)
+	// Log.Info("next_record_next_record_offset is========>%+v\n", rec.record.(*UserRecord).offset)
+	// Log.Info("next_record_next_record's_next is========>%+v\n", rec.record.(*UserRecord).header.next)
+
+	var next_record_offset uint64
+	var rc_record_offset uint64
+
+	supremum := rc.Index.supremum()
+	rc_record_offset = rc.Record.record.(*UserRecord).offset
+	switch rec.record.(type) {
+	case *UserRecord:
+
+		next_record_offset = rec.record.(*UserRecord).offset
+		next_record := rec.record.(*UserRecord)
+		if (next_record.header.next == supremum.record.(*SystemRecord).header.next) || next_record_offset == rc_record_offset {
+			return nil
+		} else {
+			return rec
+		}
+	case *SystemRecord:
+		next_record_offset = rec.record.(*SystemRecord).offset
+		next_record := rec.record.(*SystemRecord)
+		if (next_record.header.next == supremum.record.(*SystemRecord).header.next) || next_record_offset == rc_record_offset {
+			return nil
+		} else {
+			return rec
+		}
+	}
+	// switch rc.Record.record.(type) {
+	// case UserRecord:
+	// 	rc_record_offset = rc.Record.record.(*UserRecord).offset
+	// case SystemRecord:
+	// 	rc_record_offset = rc.Record.record.(*SystemRecord).offset
 	// }
+	// switch rec.record.(type) {
+	// case UserRecord:
+	// 	next_record_offset = rec.record.(*UserRecord).offset
+	// case SystemRecord:
+	// 	next_record_offset = rec.record.(*SystemRecord).offset
+	// }
+	// Log.Info("next_record this record's offset is========>%+v\n", rc_record_offset)
+	// Log.Info("next_record next record's offset is========>%+v\n", next_record_offset)
+
+	//Log.Info("next_record this record's page number is========>%+v\n", next_record_offset)
+	// Log.Info("next_record supremum header.next is========>%+v\n", supremum.record.(*SystemRecord).header.next)
+	// Log.Info("next_record record header.next is========>%+v\n", rec.record.(*UserRecord).header.next)
+	return nil
+}
+
+func (rc *RecordCursor) prev_record() *Record {
+	var records *Record
 	return records
 }
 
-func (rc *RecordCursor) prev_records() []*Record {
-	var records []*Record
+func (index *Index) record_cursor(offset uint64, direction string) *RecordCursor {
 
-	return append(records, newRecord2())
+	return newRecordCursor(index, offset, direction)
+}
+func (index *Index) each_record() []*Record {
+	var records []*Record
+	rc := index.record_cursor(min, "forward")
+	// Log.Info("index each_record,========>%+v\n", rc.Record)
+	//Log.Info("index each_record header next,========>%+v\n", rc.Record.record.(*UserRecord).header.next)
+	r := rc.record()
+	// Log.Info("index_each_record()rows1 ========>%+v\n", r.record.(*UserRecord).row)
+	// for i := 0; i < len(r.record.(*UserRecord).row); i++ {
+	// 	Log.Info("index_each_record()row1========>%+v\n", r.record.(*UserRecord).row[i])
+	// }
+	records = append(records, r)
+	for ; r != nil; rc.Record, r = r, rc.record() {
+
+		// Log.Info("index_each_record()rows ========>%+v\n", r.record.(*UserRecord).row)
+		// for i := 0; i < len(r.record.(*UserRecord).row); i++ {
+		// 	Log.Info("index_each_record()row ========>%+v\n", r.record.(*UserRecord).row[i])
+		// }
+
+		records = append(records, r)
+	}
+
+	Log.Info("each_record_size is ========>%+v\n", len(records))
+
+	return records
+
 }
 
 //Return the minimum record on this page.
 func (index *Index) min_record() *Record {
 
 	infimum := index.infimum()
-	fmt.Print("min_record infinum record 的类型是%T", infimum.record)
+
 	value, ok := infimum.record.(*SystemRecord)
 	if !ok {
 		fmt.Println("failed")
 		return nil
 	}
-	println("min_record infimum.next==========================================>", value.next)
+	Log.Info("min_record infimum.next==========================================>%+v\n", value.next)
 	min := index.record(uint64(value.next))
 
 	return min
@@ -370,22 +445,23 @@ func (index *Index) max_record() *Record {
 func (index *Index) record_fields() []*Recordfield {
 	var res_arr []*Recordfield
 
-	fmt.Printf("record_fields,key ==========%v\n", index.record_format["key"])
+	Log.Info("record_fields,key ==========%v\n", index.record_format["key"])
 
 	key_arr := index.record_format["key"].([]*Recordfield)
 	for i := 0; i < len(key_arr); i++ {
 		res_arr = append(res_arr, key_arr[i])
 	}
-	fmt.Printf("record_fields,row ==========%v\n", index.record_format["row"])
-	row_arr := index.record_format["row"].([]*Recordfield)
-	for i := 0; i < len(row_arr); i++ {
-		res_arr = append(res_arr, row_arr[i])
-	}
-	fmt.Printf("record_fields,sys ==========%v\n", index.record_format["sys"])
+	Log.Info("record_fields,sys ==========%v\n", index.record_format["sys"])
 	sys_arr := index.record_format["sys"].([]*Recordfield)
 	for i := 0; i < len(sys_arr); i++ {
 		res_arr = append(res_arr, sys_arr[i])
 	}
+	Log.Info("record_fields,row ==========%v\n", index.record_format["row"])
+	row_arr := index.record_format["row"].([]*Recordfield)
+	for i := 0; i < len(row_arr); i++ {
+		res_arr = append(res_arr, row_arr[i])
+	}
+
 	return res_arr
 
 }
@@ -399,7 +475,7 @@ func (index *Index) record(offset uint64) *Record {
 	}
 
 	header, header_len := index.record_header(offset)
-	fmt.Printf("record() get header=====>%+v\n", header)
+	Log.Info("record() get header=====>%+v\n", header)
 
 	rec_len += header_len
 
@@ -415,11 +491,7 @@ func (index *Index) record(offset uint64) *Record {
 		header,
 		next,
 	)
-	//this_record.header = header
-	//record_format := index.get_record_format()
-	//this_record.record_type = record_format["tab_type"].(string)
-	//println(record_format)
-	//if index.record_format != nil {
+	Log.Info("record() this_record_offset =========>%+v\n", offset)
 	rf := index.get_record_format()
 
 	index.record_format = rf
@@ -434,16 +506,17 @@ func (index *Index) record(offset uint64) *Record {
 	rows := []*FieldDescriptor{}
 	syss := []*FieldDescriptor{}
 
-	fmt.Printf("record() all_field=====>%+v\n", all_field)
-	fmt.Printf("record() record.header.lengths=====>%+v\n", this_record.header.lengths)
+	Log.Info("record() all_field=====>%+v\n", all_field)
+	Log.Info("record() record.header.lengths=====>%+v\n", this_record.header.lengths)
 
 	for i := 0; i < len(all_field); i++ {
 		f := all_field[i]
 		p := fmap[f.position]
 		//get value exception unkown data type===> &{ 0 false}
-		fmt.Println("record() recordfield name, datatype =====>", f.name, f.data_type)
-
+		Log.Info("record() this_field_offset =========>%+v\n", offset)
 		filed_value, len := f.value(offset, this_record, index)
+		Log.Info("record() recordfield name, datatype =====>%s, %s", f.name, f.data_type)
+		Log.Info("record() recordfield value =====>%s", filed_value)
 		offset = offset + len
 		var f_name string
 		switch f.data_type.(type) {
@@ -478,18 +551,20 @@ func (index *Index) record(offset uint64) *Record {
 	for i := 0; i < len(this_record.sys); i++ {
 		switch this_record.sys[i].name {
 		case "DB_TRX_ID":
-			if len(this_record.sys[i].value.([]uint8)) == 0 {
-				this_record.transaction_id = 0
-			} else {
-				this_record.transaction_id = uint64(this_record.sys[i].value.([]uint8)[0])
-			}
-
+			// if len(this_record.sys[i].value.(uint64)) == 0 {
+			// 	this_record.transaction_id = 0
+			// } else {
+			// 	this_record.transaction_id = uint64(this_record.sys[i].value.([]uint8)[0])
+			// }
+			this_record.transaction_id = this_record.sys[i].value.(uint64)
+			Log.Info("record this record's transaction_id is =======> %+v\n", this_record.transaction_id)
 		case "DB_ROLL_PTR":
-			if len(this_record.sys[i].value.([]uint8)) == 0 {
-				this_record.roll_pointer = 0
-			} else {
-				this_record.roll_pointer = uint64(this_record.sys[i].value.([]uint8)[0])
-			}
+			// if len(this_record.sys[i].value.([]uint8)) == 0 {
+			// 	this_record.roll_pointer = 0
+			// } else {
+			// 	this_record.roll_pointer = uint64(this_record.sys[i].value.([]uint8)[0])
+			// }
+			this_record.roll_pointer = this_record.sys[i].value.(*Pointer)
 
 		}
 
@@ -535,7 +610,7 @@ func restruct_describer(a interface{}) map[string]interface{} {
 	}
 	//获取到该结构体有几个字段
 	num := val.NumField()
-	//fmt.Printf("该结构体有%d个字段\n", num) //4个
+	//Log.Info("该结构体有%d个字段\n", num) //4个
 
 	var str_type string
 	var str_key string
@@ -573,12 +648,13 @@ func restruct_describer(a interface{}) map[string]interface{} {
 		fmt.Println("Umarshal failed:", err)
 		return nil
 	}
-	fmt.Println("m:", m)
+	//fmt.Println("m:", m)
 	return m
 }
 
 var fmap = make(map[int]string)
 
+//只实现了系统表systable sysindex 的description
 func (index *Index) make_record_description() map[string]interface{} {
 	var position [1024]int
 	for i := 0; i <= RECORD_MAX_N_FIELDS; i++ {
@@ -595,33 +671,31 @@ func (index *Index) make_record_description() map[string]interface{} {
 		description := description.(*SysTablesPrimary)
 		fields["type"] = description.TAB_TYPE
 
-	case *SysIndexesPrimary:
-		description := description.(*SysIndexesPrimary)
-
 		//转化成ruby那样的格式，统一下，要不后续不好处理
 		ruby_description = restruct_describer(*description)
-		fmt.Printf("ruby_description key 的内容是=======>%v\n", ruby_description["key"])
+		Log.Info("ruby_description key 的内容是=======>%v\n", ruby_description["key"])
 		var counter int
 		counter = 0
 
 		var key_arr []*Recordfield
 		for k, v := range ruby_description["key"].([]interface{}) {
 			//key_arr = []*Recordfield{}
-			fmt.Println("index=", k, "value=", v)
+			Log.Info("index=%d", k, "value=%s", v)
 			value := v.(map[string]interface{})
 			prop := value["type"].([]interface{})
 			var properties string
 			for i := 1; i < len(prop); i++ {
 				properties += " " + prop[i].(string)
 			}
-			println("recordfield key is----------->", position[counter], value["name"].(string))
 			rf := newRecordfield(position[counter], value["name"].(string), prop[0].(string), properties)
+			Log.Info("record() key type_definition =====>%+v\n", prop[0].(string))
+			Log.Info("record() key properties =====>%+v\n", properties)
+
 			fmap[counter] = "key"
 			key_arr = append(key_arr, rf)
 			counter = counter + 1
 		}
 
-		println("key_arr的长度是=======>", len(key_arr))
 		ruby_description["key"] = key_arr
 
 		//ruby_description["type"] = description.TAB_TYPE
@@ -636,7 +710,7 @@ func (index *Index) make_record_description() map[string]interface{} {
 			fmap[counter] = "sys"
 			counter = counter + 1
 			sys_arr = append(sys_arr, DB_ROLL_PTR)
-			fmt.Printf("sys_arr的类型是=======>%T", sys_arr)
+			Log.Info("sys_arr的类型是=======>%T\n", sys_arr)
 			ruby_description["sys"] = sys_arr
 		}
 
@@ -650,18 +724,95 @@ func (index *Index) make_record_description() map[string]interface{} {
 				for i := 1; i < len(prop); i++ {
 					properties += " " + prop[i].(string)
 				}
-
 				row := newRecordfield(position[counter], name, prop[0].(string), properties)
+				Log.Info("record() row type_definition =====>%+v\n", prop[0].(string))
+				Log.Info("record() row properties =====>%+v\n", properties)
 				fmap[counter] = "row"
 				row_arr = append(row_arr, row)
 				counter = counter + 1
 
 			}
-			fmt.Printf("row_arr的类型是=======>%T", row_arr)
+			Log.Info("row_arr的值=======>%+v\n", row_arr)
 			ruby_description["row"] = row_arr
 		}
 
-		fmt.Println("make_record_description ruby_description:", ruby_description)
+		Log.Info("make_record_description ruby_description:%s", ruby_description)
+		// println("fmap")
+		// for k, v := range fmap {
+		// 	println(k)
+		// 	println(v)
+		// }
+		return ruby_description
+	case *SysIndexesPrimary:
+		description := description.(*SysIndexesPrimary)
+
+		//转化成ruby那样的格式，统一下，要不后续不好处理
+		ruby_description = restruct_describer(*description)
+		Log.Info("ruby_description key 的内容是=======>%v\n", ruby_description["key"])
+		var counter int
+		counter = 0
+
+		var key_arr []*Recordfield
+		for k, v := range ruby_description["key"].([]interface{}) {
+
+			Log.Info("index=%d", k, "value=%s", v)
+			value := v.(map[string]interface{})
+			prop := value["type"].([]interface{})
+			var properties string
+			for i := 1; i < len(prop); i++ {
+				properties += " " + prop[i].(string)
+			}
+			Log.Info("recordfield key is%d----------->%s", position[counter], value["name"].(string))
+			rf := newRecordfield(position[counter], value["name"].(string), prop[0].(string), properties)
+			Log.Info("record() key type_definition =====>%+v\n", prop[0].(string))
+			Log.Info("record() key properties =====>%+v\n", properties)
+
+			fmap[counter] = "key"
+			key_arr = append(key_arr, rf)
+			counter = counter + 1
+		}
+
+		ruby_description["key"] = key_arr
+
+		//ruby_description["type"] = description.TAB_TYPE
+		var sys_arr []*Recordfield
+		if index.isleaf() && ruby_description["tab_type"] == "clustered" {
+
+			DB_TRX_ID := newRecordfield(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
+			fmap[counter] = "sys"
+			counter = counter + 1
+			sys_arr = append(sys_arr, DB_TRX_ID)
+			DB_ROLL_PTR := newRecordfield(position[counter], "DB_ROLL_PTR", "ROLL_PTR", "NOT_NULL")
+			fmap[counter] = "sys"
+			counter = counter + 1
+			sys_arr = append(sys_arr, DB_ROLL_PTR)
+			Log.Info("sys_arr的类型是=======>%T\n", sys_arr)
+			ruby_description["sys"] = sys_arr
+		}
+
+		var row_arr []*Recordfield
+		if (index.isleaf() && ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
+			for _, v := range ruby_description["row"].([]interface{}) {
+				value := v.(map[string]interface{})
+				name := value["name"].(string)
+				prop := value["type"].([]interface{})
+				var properties string
+				for i := 1; i < len(prop); i++ {
+					properties += " " + prop[i].(string)
+				}
+				row := newRecordfield(position[counter], name, prop[0].(string), properties)
+				Log.Info("record() row type_definition =====>%+v\n", prop[0].(string))
+				Log.Info("record() row properties =====>%+v\n", properties)
+				fmap[counter] = "row"
+				row_arr = append(row_arr, row)
+				counter = counter + 1
+
+			}
+			Log.Info("row_arr的值=======>%+v\n", row_arr)
+			ruby_description["row"] = row_arr
+		}
+
+		Log.Info("make_record_description ruby_description:%s", ruby_description)
 		// println("fmap")
 		// for k, v := range fmap {
 		// 	println(k)
@@ -688,25 +839,24 @@ func (index *Index) make_record_describer() interface{} {
 }
 
 func (index *Index) infimum() *Record {
-	println("in infimum(),get pos_infimum()", index.pos_infimum())
 	infimum := index.system_record(index.pos_infimum())
 
-	switch infimum.record.(type) {
-	case *UserRecord:
-		println(infimum.record.(*UserRecord).header.next)
-	}
+	// switch infimum.record.(type) {
+	// case *UserRecord:
+	// 	println(infimum.record.(*UserRecord).header.next)
+	// }
 
 	return infimum
 }
 
 func (index *Index) supremum() *Record {
 	supremum := index.system_record(index.pos_supremum())
+	Log.Info("supremum(),next=>%d", supremum.record.(*SystemRecord).header.next)
 	return supremum
 }
 
 func (index *Index) system_record(offset uint64) *Record {
 	header, _ := index.record_header(offset)
-	println("system_record(),offset=>", offset, "get system_record header next", header.next)
 	index.recordHeader = header
 	data := index.Page.readbytes(int64(offset), int64(index.size_mum_record()))
 	systemrecord := newSystemRecord(offset, header, header.next, data, 0)
@@ -718,7 +868,6 @@ func (index *Index) record_header(offset uint64) (*RecordHeader, uint64) {
 
 	header := newRecordHeader()
 	var header_len uint64
-	println("record_header,get header format==>", index.pageHeader.format)
 	switch index.pageHeader.format {
 	case "compact":
 
@@ -734,12 +883,8 @@ func (index *Index) record_header(offset uint64) (*RecordHeader, uint64) {
 		header_len = 2 + 2 + 1 + 0 //0 代表record_header_compact_additional中处理记录，先不看
 
 	case "redundant":
-		println("record header format is redundant page no and offset is===>", index.Page.Page_number, offset)
-
 		header.next = uint64(index.Page.bufferReadat(int64(offset)-2, 2))
 		//bytes := index.Page.readbytes(int64(offset)-2, 2)
-
-		println("record header format is redundant and header.next is===>", header.next)
 		bits1 := uint64(index.Page.bufferReadat(int64(offset)-5, 3))
 		if (bits1 & 1) == 0 {
 			header.offset_size = 2
@@ -759,12 +904,12 @@ func (index *Index) record_header(offset uint64) (*RecordHeader, uint64) {
 		index.record_header_redundant_additional(header, offset)
 		header_len = 2 + 3 + 1 + 0 //0 代表record_header_redundant_additional中处理记录，先不看
 		header.length = header_len
-		fmt.Printf("header 的值是========》%+v\n", header)
-		fmt.Printf("header lengths 的值是========》%+v\n", header.lengths)
-		fmt.Printf("header nulls 的值是========》%+v\n", header.nulls)
-		fmt.Printf("header externs 的值是========》%+v\n", header.externs)
+		Log.Info("header的值是========》%+v\n", header)
+		Log.Info("header lengths 的值是========》%+v\n", header.lengths)
+		Log.Info("header nulls 的值是========》%+v\n", header.nulls)
+		Log.Info("header externs 的值是========》%+v\n", header.externs)
 		//println("lengths:%v", header.lengths, "nulls:%v", header.nulls, "externs:%v", header.externs)
-		println("offset_size:", header.offset_size, "n_fields:", header.n_fields, "heap_number:", header.heap_number, "n_owned:", header.n_owned, "info_flags:", header.info_flags, "next:", header.next)
+		//println("offset_size:", header.offset_size, "n_fields:", header.n_fields, "heap_number:", header.heap_number, "n_owned:", header.n_owned, "info_flags:", header.info_flags, "next:", header.next)
 	}
 
 	header.length = header_len
@@ -798,8 +943,8 @@ func (index *Index) record_header_redundant_additional(header *RecordHeader, off
 	nulls := []bool{}
 	externs := []bool{}
 	field_offsets := index.record_header_redundant_field_end_offsets(header, offset)
-	fmt.Printf("record_header_redundant_additional的 header.heap number 内容是==================>%v\n", header.heap_number)
-	fmt.Printf("record_header_redundant_additional的 field_offsets 内容是==================>%v\n", field_offsets)
+	Log.Info("record_header_redundant_additional的 header.heap number 内容是==================>%v\n", header.heap_number)
+	Log.Info("record_header_redundant_additional的 field_offsets 内容是==================>%v\n", field_offsets)
 	this_field_offset := 0
 	// var next_field_offset int
 	for i := 0; i < len(field_offsets); i++ {
@@ -807,10 +952,10 @@ func (index *Index) record_header_redundant_additional(header *RecordHeader, off
 		switch header.offset_size {
 		case 1:
 			next_field_offset := (field_offsets[i] & RECORD_REDUNDANT_OFF1_OFFSET_MASK)
-			fmt.Printf("record_header_redundant_additional的 RECORD_REDUNDANT_OFF1_OFFSET_MASK 内容是==================>%+v\n", RECORD_REDUNDANT_OFF1_OFFSET_MASK)
-			fmt.Printf("record_header_redundant_additional的 field_offsets[i] 内容是==================>%+v\n", field_offsets[i])
-			fmt.Printf("record_header_redundant_additional的 next_field_offset 内容是==================>%+v\n", next_field_offset)
-			fmt.Printf("record_header_redundant_additional的 this_field_offset 内容是==================>%+v\n", this_field_offset)
+			Log.Info("record_header_redundant_additional的 RECORD_REDUNDANT_OFF1_OFFSET_MASK 内容是==================>%+v\n", RECORD_REDUNDANT_OFF1_OFFSET_MASK)
+			Log.Info("record_header_redundant_additional的 field_offsets[i] 内容是==================>%+v\n", field_offsets[i])
+			Log.Info("record_header_redundant_additional的 next_field_offset 内容是==================>%+v\n", next_field_offset)
+			Log.Info("record_header_redundant_additional的 this_field_offset 内容是==================>%+v\n", this_field_offset)
 
 			lengths = append(lengths, (next_field_offset - this_field_offset))
 			nulls = append(nulls, ((field_offsets[i] & RECORD_REDUNDANT_OFF1_NULL_MASK) != 0))
@@ -825,11 +970,11 @@ func (index *Index) record_header_redundant_additional(header *RecordHeader, off
 		}
 
 	}
-	fmt.Printf("record_header_redundant_additional的 lengths 内容是==================>%v\n", lengths)
-	fmt.Printf("record_header_redundant_additional的 nulls 内容是==================>%v\n", nulls)
-	fmt.Printf("record_header_redundant_additional的 externs 内容是==================>%v\n", externs)
-	fmt.Printf("record_header_redundant_additional的 record_format 内容是==================>%v\n", index.record_format)
-	fmt.Printf("record_header_redundant_additional的 record_describer 内容是==================>%v\n", index.record_describer)
+	Log.Info("record_header_redundant_additional的 lengths 内容是==================>%v\n", lengths)
+	Log.Info("record_header_redundant_additional的 nulls 内容是==================>%v\n", nulls)
+	Log.Info("record_header_redundant_additional的 externs 内容是==================>%v\n", externs)
+	Log.Info("record_header_redundant_additional的 record_format 内容是==================>%v\n", index.record_format)
+	Log.Info("record_header_redundant_additional的 record_describer 内容是==================>%v\n", index.record_describer)
 
 	index.record_format = index.get_record_format()
 	if index.record_format != nil {
@@ -837,11 +982,10 @@ func (index *Index) record_header_redundant_additional(header *RecordHeader, off
 		header.nulls = []string{}
 		header.externs = []string{}
 		all_fields := index.record_fields()
-		fmt.Printf("record_header_redundant_additional的 all_fields 内容是==================>%v\n", len(all_fields))
-		fmt.Printf("record_header_redundant_additional的 field_offset 长度是==================>%v\n", len(field_offsets))
+		Log.Info("record_header_redundant_additional的 all_fields 内容是==================>%v\n", len(all_fields))
+		Log.Info("record_header_redundant_additional的 field_offset 长度是==================>%v\n", len(field_offsets))
 		for i := 0; i < len(all_fields); i++ {
 			f := all_fields[i]
-			println("record_field_name==============>", f.name)
 			if f.position >= len(lengths) {
 				header.lengths[f.name] = -1
 			} else {
@@ -872,41 +1016,21 @@ func (index *Index) record_header_redundant_additional(header *RecordHeader, off
 		// header.nulls = nulls
 		// header.externs = externs
 	}
-	fmt.Printf("record_header_redundant_additional的 header.lengths 内容是==================>%v\n", header.lengths)
-	fmt.Printf("record_header_redundant_additional的 header.nulls 内容是==================>%v\n", header.nulls)
-	fmt.Printf("record_header_redundant_additional的 header.externs 内容是==================>%v\n", header.externs)
+	Log.Info("record_header_redundant_additional的 header.lengths 内容是==================>%v\n", header.lengths)
+	Log.Info("record_header_redundant_additional的 header.nulls 内容是==================>%v\n", header.nulls)
+	Log.Info("record_header_redundant_additional的 header.externs 内容是==================>%v\n", header.externs)
 
 }
 
 func (index *Index) record_header_redundant_field_end_offsets(header *RecordHeader, offset uint64) []int {
 	field_offsets := []int{}
-	fmt.Printf("record_header_redundant_field_end_offsets offset 内容是==================>%v\n", offset)
+	Log.Info("record_header_redundant_field_end_offsets offset 内容是==================>%v\n", offset)
 	for i := 0; i < int(header.n_fields); i++ {
 		field_offsets = append(field_offsets, index.Page.bufferReadat(int64(offset)-1, int64(header.offset_size)))
-		fmt.Printf("record_header_redundant_field_end_offsets page number 是==================>%v\n", index.Page.Page_number)
+		Log.Info("record_header_redundant_field_end_offsets page number 是==================>%v\n", index.Page.Page_number)
 
-		fmt.Printf("record_header_redundant_field_end_offsets field_offsets 内容是==================>%v\n", field_offsets)
+		Log.Info("record_header_redundant_field_end_offsets field_offsets 内容是==================>%v\n", field_offsets)
 		offset = offset - header.offset_size
 	}
 	return field_offsets
-}
-
-// func get_offset_size_read(offset_size uint64) int {
-// 	switch header.offset_size {
-// 	case 1:
-// 		return
-// 	}
-// }
-func (index *Index) record_cursor(offset uint64, direction string) *RecordCursor {
-
-	return newRecordCursor(index, offset, direction)
-}
-func (index *Index) each_record() []*Record {
-
-	println("index each_record() ========")
-
-	c := index.record_cursor(min, "forward")
-
-	return c.records()
-
 }

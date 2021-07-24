@@ -110,20 +110,45 @@ func (s *Space) index(root_page_number uint64, record_describer interface{}) *BT
 	return newBTreeIndex(s, root_page_number, record_describer)
 }
 
-func (s *Space) each_index() {
+func RemoveRepeatedElement(arr []uint64) (newArr []uint64) {
+	newArr = make([]uint64, 0)
+	for i := 0; i < len(arr); i++ {
+		repeat := false
+		for j := i + 1; j < len(arr); j++ {
+			if arr[i] == arr[j] {
+				repeat = true
+				break
+			}
+		}
+		if !repeat {
+			newArr = append(newArr, arr[i])
+		}
+	}
+	return
+}
 
-	res := s.each_index_root_page_number()
-	println("eache_index result=========>", res)
+func (s *Space) each_index() []*BTreeIndex {
+	var indexes []*BTreeIndex
+	root_pages := RemoveRepeatedElement(s.each_index_root_page_number())
+	Log.Info("eache_index all_root_page_number=========>%+v", root_pages)
+	for _, value := range root_pages {
+		indexes = append(indexes, s.index(value, nil))
+	}
+	return indexes
 
 }
 
-//获取表空间所有index的 root 叶
-func (s *Space) each_index_root_page_number() []*Index {
-
+//获取表空间所有index的
+func (s *Space) each_index_root_page_number() []uint64 {
+	var root_page_numer []uint64
 	if s.innodb_system != nil {
 		//s.innodb_system.data_dictionary.each_index_by_space_id(s.get_space_id())
 		//data_dict := s.innodb_system.
-		return s.innodb_system.data_dictionary.each_index_by_space_id(s.get_space_id())
+		for _, value := range s.innodb_system.data_dictionary.each_index_by_space_id(s.get_space_id()) {
+			page_no := uint64(value["PAGE_NO"].(int64))
+			root_page_numer = append(root_page_numer, page_no)
+		}
+		return root_page_numer
 	}
 	return nil
 }

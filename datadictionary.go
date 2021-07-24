@@ -146,34 +146,45 @@ type DataDictionary struct {
 func newDataDictionary(system_space *System) *DataDictionary {
 	return &DataDictionary{system_space: system_space}
 }
-func (dh *DataDictionary) each_table() {
+func (dh *DataDictionary) each_table() []map[string]interface{} {
 	res := dh.each_record_from_data_dictionary_index("SYS_TABLES", "PRIMARY")
-	println(res)
+	var all_record_field []map[string]interface{}
+	for i := 0; i < len(res); i++ {
+		Log.Info("each_table each table======>%+v\n", res[i])
+		all_record_field = append(all_record_field, res[i].get_fields())
+	}
+	Log.Info("each_table=====>length is:%+v\n", len(all_record_field))
+
+	return all_record_field
 }
 
-func (dh *DataDictionary) each_index() []*Index {
+func (dh *DataDictionary) each_index() []map[string]interface{} {
 
 	res := dh.each_record_from_data_dictionary_index("SYS_INDEXES", "PRIMARY")
-	println("each_record_from_data_dictionary_index=====>size is:", res)
-
+	var all_record_field []map[string]interface{}
 	for i := 0; i < len(res); i++ {
-		println("each_index each index======>%v", res[i])
-
+		Log.Info("each_index each index======>%+v", res[i])
+		all_record_field = append(all_record_field, res[i].get_fields())
 	}
+	Log.Info("each_record_from_data_dictionary_index=====>all_record_field is:%+v", all_record_field)
 
-	var tmp_index []*Index
-	return tmp_index
+	return all_record_field
 }
 
 func (dh *DataDictionary) each_record_from_data_dictionary_index(table string, index string) []*Record {
 
-	//跟index
+	// 跟index
 	rootindex := dh.data_dictionary_index(table, index)
+	Log.Info("each_record_from_data_dictionary_index rootindex.next========>%+v\n", rootindex.Root.Page.FileHeader.Next)
+
 	records := rootindex.each_record()
 	// 对返回的每个记录进行处理
 
-	println("each_record_from_data_dictionary_index 所有的记录", records)
-
+	Log.Info("each_record_from_data_dictionary_index 所有的记录数%+v\n", len(records))
+	Log.Info("each_record_from_data_dictionary_index 所有的记录%+v\n", records)
+	for i := 0; i < len(records); i++ {
+		Log.Info("each_record_from_data_dictionary_index_page_number======>%+v\n", records[i].get_fields())
+	}
 	return records
 }
 
@@ -197,14 +208,14 @@ func (dh *DataDictionary) CheckNestedStruct(table_entry interface{}, table_name 
 				res = value
 				return res
 			case string:
-				fmt.Printf("list is a string and its value is %s\n", value)
+				Log.Info("list is a string and its value is %s\n", value)
 			default:
 				fmt.Println("list is of a different type%s", value)
 			}
 
 			//return varValue
 		}
-		//fmt.Printf("%v  %v\n", varName, fieldType)
+		//Log.Info("%v  %v\n", varName, fieldType)
 		if fieldType == reflect.Struct {
 			if varName == table_name {
 				find_table = true
@@ -248,7 +259,7 @@ func (dh *DataDictionary) data_dictionary_index_describer(table_name string, ind
 	if dh.is_data_dictionary_index(table_name, index_name) {
 
 		class_name := DATA_DICTIONARY_RECORD_DESCRIBERS[table_name][index_name]
-		println("data_dictionary_index_describer get index describer======>", class_name)
+		Log.Info("data_dictionary_index_describer get index describer======>%+v\n", class_name)
 		cls, _ := New(class_name)
 		return cls
 	}
@@ -260,11 +271,11 @@ func (dh *DataDictionary) data_dictionary_index(table_name string, index_name st
 	var index_root_page uint64
 	if table_name == "SYS_TABLES" {
 		table_entry := dh.data_dictionary_indexes().SYS_TABLES
-		println("in data_dictionary_index, table_entry ========>", table_entry.PRIMARY)
+		Log.Info("in data_dictionary_index, table_entry ========>%+v\n", table_entry.PRIMARY)
 		index_root_page = table_entry.PRIMARY
 	} else if table_name == "SYS_INDEXES" {
 		table_entry := dh.data_dictionary_indexes().SYS_INDEXES
-		println("in data_dictionary_index, table_entry ========>", table_entry.PRIMARY)
+		Log.Info("in data_dictionary_index, table_entry ========>%+v\n", table_entry.PRIMARY)
 		index_root_page = table_entry.PRIMARY
 	}
 
@@ -275,7 +286,7 @@ func (dh *DataDictionary) data_dictionary_index(table_name string, index_name st
 
 	record_describer := dh.data_dictionary_index_describer(table_name, index_name)
 
-	println("data_dictionary_index table_name, index_name,index_root_page=======>", table_name, index_name, index_root_page)
+	//println("data_dictionary_index table_name, index_name,index_root_page=======>", table_name, index_name, index_root_page)
 
 	switch value := record_describer.(type) {
 	case *SysTablesPrimary:
@@ -291,7 +302,7 @@ func (dh *DataDictionary) data_dictionary_index(table_name string, index_name st
 	default:
 		fmt.Println("description is of a different type%T", value)
 	}
-	println("data_dictionary_index record_describer======>", record_describer)
+	Log.Info("data_dictionary_index_record_describer======>%+v\n", record_describer)
 
 	return dh.system_space.system_space().index(index_root_page, record_describer)
 
@@ -305,9 +316,24 @@ func (dh *DataDictionary) data_dictionary_indexes() Dict_Index {
 	return header.Indexes
 }
 
-func (dh *DataDictionary) each_index_by_space_id(space_id uint64) []*Index {
-	return dh.each_index()
+func (dh *DataDictionary) each_index_by_space_id(space_id uint64) []map[string]interface{} {
+	all_record_field := dh.each_index()
+	var records []map[string]interface{}
 	//根据上面返回的每个记录进行sapce的匹配，匹配的话输出
+	Log.Info("each_index_by_space_id() space_id =======>%+v\n", space_id)
+
+	for _, record := range all_record_field {
+		Log.Info("each_index_by_space_id() =======>%+v\n", record)
+		Log.Info("each_index_by_space_id() record[space]=======>%+v\n", record["SPACE"])
+
+		space_no := uint64(record["SPACE"].(int64))
+		if space_no == space_id {
+			records = append(records, record)
+		}
+	}
+	Log.Info("each_index_by_space_id() records length is======%d", len(records))
+	return records
+
 }
 
 func (dh *DataDictionary) record_describer_by_index_id(index_id uint64) interface{} {

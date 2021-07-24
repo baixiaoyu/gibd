@@ -53,15 +53,6 @@ func (rf *Recordfield) is_nullable(record *Record) bool {
 	return rf.nullable
 }
 
-// func (rf *Recordfield) is_null(record *Record) bool {
-
-// 	return rf.is_nullable() && record.header.nulls.include(rf.name)
-// }
-
-// func (rf *Recordfield) is_extern(record *Record) bool {
-// 	return record.header.externs.include(rf.name)
-// }
-
 func (rf *Recordfield) is_variable() bool {
 	types := []string{"BlobType", "VariableBinaryType", "VariableCharacterType"}
 	for _, element := range types {
@@ -80,9 +71,21 @@ func (rf *Recordfield) is_blob() bool {
 }
 
 func parse_type_definition(type_definition string) (string, string) {
-	// base_type := "aaa"
-	modifiers := " "
-	return type_definition, modifiers
+	// base_type := "varchar(100)" modifiers=100
+	if strings.Contains(type_definition, "(") && strings.Contains(type_definition, ")") {
+		start_pos := strings.Index(type_definition, "(")
+		end_pos := strings.Index(type_definition, ")")
+		modifiers := type_definition[start_pos+1 : end_pos]
+		type_def := type_definition[0:start_pos]
+		Log.Info("parse_type_definition_type_def====>%+v\n", type_def)
+		Log.Info("parse_type_definition_modifiers====>%+v\n", modifiers)
+
+		return type_def, modifiers
+	} else {
+		modifiers := " "
+		return type_definition, modifiers
+	}
+
 }
 
 func (rf *Recordfield) value(offset uint64, record *UserRecord, index *Index) (interface{}, uint64) {
@@ -93,10 +96,54 @@ func (rf *Recordfield) value(offset uint64, record *UserRecord, index *Index) (i
 	return rf.value_by_length(offset, rf.length(record), index)
 }
 
+func (rf *Recordfield) value_by_length(offset uint64, field_length int64, index *Index) (interface{}, uint64) {
+	Log.Info("value_by_length() field name is========>%+v\n", rf.name)
+	Log.Info("value_by_length() field_length  is========>%+v\n", field_length)
+	switch rf.data_type.(type) {
+	case *IntegerType:
+		return rf.data_type.(*IntegerType).value(rf.read(offset, field_length, index), index), uint64(field_length)
+	case *TransactionIdType:
+		return rf.data_type.(*TransactionIdType).read(offset, index.Page), 6
+	case *RollPointerType:
+		bytes := rf.read(offset, field_length, index)
+		Log.Info("value_by_length() RollPointerType  bytes========>%+v\n", bytes)
+		Log.Info("value_by_length() RollPointerType  type========>%T\n", bytes)
+		return rf.data_type.(*RollPointerType).value(bytes), uint64(field_length)
+	case *VariableCharacterType:
+		Log.Info("value_by_length() VariableCharacterType%+v\n", rf)
+		Log.Info("value_by_length() VariableCharacterType  offset========>%+v\n", offset)
+		Log.Info("value_by_length() VariableCharacterType  field_length========>%+v\n", field_length)
+
+		Log.Info("value_by_length() VariableCharacterType  where get varchar========>%+v\n", string(rf.read(offset, field_length, index)))
+		return rf.data_type.(*VariableCharacterType).value(string(rf.read(offset, field_length, index))), uint64(field_length)
+	default:
+		Log.Info("value_by_length() 还未实现的类型========%\n")
+	}
+	// if _, ok := rf.data_type.(interface{ value() }); ok {
+	// 	Log.Info("value_by_length()   call value method========%\n")
+	// 	switch rf.data_type.(type) {
+	// 	case *IntegerType:
+	// 		Log.Info("value_by_length() record type is interger  call value method========%\n")
+
+	// 		return rf.data_type.(*IntegerType).value(rf.read(offset, field_length, index), index), uint64(field_length)
+	// 	}
+	// } else if _, ok := rf.data_type.(interface{ read() }); ok {
+	// 	Log.Info("value_by_length() call read method========%\n")
+	// 	switch rf.data_type.(type) {
+	// 	case *TransactionIdType:
+	// 		return rf.data_type.(*TransactionIdType).read(offset, index.Page), 6
+	// 	}
+	// } else {
+	// 	Log.Info("value_by_length() no value no read  call read method========%\n")
+
+	// 	return rf.read(offset, field_length, index), 0
+	// }
+	return nil, 0
+
+}
+
 func (rf *Recordfield) length(record *UserRecord) int64 {
 	var len int64
-	fmt.Println("length() recordfield name, datatype =====>", rf.name, rf.data_type)
-	fmt.Println("length() record.header.lengths =====>%v", record.header.lengths)
 	name_in_map := false
 	for k, _ := range record.header.lengths {
 		if rf.name == k {
@@ -105,16 +152,16 @@ func (rf *Recordfield) length(record *UserRecord) int64 {
 	}
 	if name_in_map {
 		len = int64(record.header.lengths[rf.name])
-		fmt.Println("length() record filed length =====>", len)
 	} else {
 		switch value := rf.data_type.(type) {
 		case IntegerType:
 			len = int64(rf.data_type.(IntegerType).width)
 		case BitType:
 			len = int64(rf.data_type.(BitType).width)
+		case VariableCharacterType:
+			len = int64(rf.data_type.(VariableCharacterType).width)
 		default:
 			fmt.Println("unkown data type===>", value)
-
 		}
 	}
 
@@ -160,33 +207,11 @@ func (rf *Recordfield) has_method(data_type interface{}, method_name string) boo
 				return true
 			}
 		}
-
 	default:
 		fmt.Println("unkown data type%T", value)
-
 	}
 
 	return false
-}
-
-func (rf *Recordfield) value_by_length(offset uint64, field_length int64, index *Index) (interface{}, uint64) {
-
-	if _, ok := rf.data_type.(interface{ value() }); ok {
-		switch rf.data_type.(type) {
-		case *IntegerType:
-			return rf.data_type.(*IntegerType).value(rf.read(offset, field_length, index), index), uint64(field_length)
-		}
-	} else if _, ok := rf.data_type.(interface{ read() }); ok {
-		switch rf.data_type.(type) {
-		case *TransactionIdType:
-			return rf.data_type.(*TransactionIdType).read(offset, index.Page), 6
-
-		}
-	} else {
-		return rf.read(offset, field_length, index), 0
-	}
-	return nil, 0
-
 }
 
 func (rf *Recordfield) read(offset uint64, field_length int64, index *Index) []byte {
