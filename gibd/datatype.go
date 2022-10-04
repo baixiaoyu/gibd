@@ -1,4 +1,4 @@
-package main
+package gibd
 
 import (
 	"bytes"
@@ -14,18 +14,18 @@ type BitType struct {
 	width int
 }
 
-func newBitType(base_type string, modifiers string, properties string) *BitType {
+func NewBitType(base_type string, modifiers string, properties string) *BitType {
 	nbits := len(modifiers)
 
 	if nbits < 0 || nbits > 64 {
 		return nil
 	}
 	width := (nbits + 7) / 8
-	name := make_name(base_type, modifiers, properties)
+	name := Make_Name(base_type, modifiers, properties)
 	return &BitType{width: width, name: name}
 }
 
-func (bit *BitType) value(data int) int {
+func (bit *BitType) Value(data int) int {
 	return data
 }
 
@@ -35,29 +35,29 @@ type IntegerType struct {
 	unsigned bool
 }
 
-func newIntegerType(base_type string, modifiers string, properties string) *IntegerType {
-	width := base_type_width_map[base_type]
+func NewIntegerType(base_type string, modifiers string, properties string) *IntegerType {
+	width := BASE_TYPE_WIDTH_MAP[base_type]
 	unsigned := strings.Contains(properties, "UNSIGNED")
-	name := make_name(base_type, modifiers, properties)
+	name := Make_Name(base_type, modifiers, properties)
 	return &IntegerType{
 		width: width, name: name, unsigned: unsigned,
 	}
 
 }
 
-func (integer *IntegerType) value(data []byte, index *Index) int64 {
+func (integer *IntegerType) Value(data []byte, index *Index) int64 {
 	nbits := integer.width * 8
 	if integer.unsigned {
-		return integer.get_uint(data, nbits, index)
+		return integer.Get_Uint(data, nbits, index)
 	} else {
-		return integer.get_int(data, nbits, index)
+		return integer.Get_Int(data, nbits, index)
 	}
 }
 
-func (integer *IntegerType) get_uint(data []byte, nbits int, index *Index) int64 {
+func (integer *IntegerType) Get_Uint(data []byte, nbits int, index *Index) int64 {
 	return int64(index.Page.BytesToUIntLittleEndian(data))
 }
-func (integer *IntegerType) get_int(data []byte, nbits int, index *Index) int64 {
+func (integer *IntegerType) Get_Int(data []byte, nbits int, index *Index) int64 {
 	return int64(index.Page.BytesToIntLittleEndian(data))
 }
 
@@ -66,17 +66,17 @@ type TransactionIdType struct {
 	width int
 }
 
-func newTransactionIdType(base_type string, modifiers string, properties string) *TransactionIdType {
+func NewTransactionIdType(base_type string, modifiers string, properties string) *TransactionIdType {
 	width := 6
-	name := make_name(base_type, modifiers, properties)
+	name := Make_Name(base_type, modifiers, properties)
 	return &TransactionIdType{
 		name:  name,
 		width: width,
 	}
 }
 
-func (t *TransactionIdType) read(offset uint64, p *Page) uint64 {
-	transaction_id := uint64(p.bufferReadat(int64(offset), 6))
+func (t *TransactionIdType) Read(offset uint64, p *Page) uint64 {
+	transaction_id := uint64(p.BufferReadAt(int64(offset), 6))
 	return transaction_id
 }
 
@@ -86,7 +86,7 @@ type Pointer struct {
 	undo_log  *Address
 }
 
-func newPointer(is_insert bool, rseg_id uint64, undo_log *Address) *Pointer {
+func NewPointer(is_insert bool, rseg_id uint64, undo_log *Address) *Pointer {
 	return &Pointer{
 		is_insert: is_insert,
 		rseg_id:   rseg_id,
@@ -100,26 +100,26 @@ type RollPointerType struct {
 	p     *Pointer
 }
 
-func newRollPointerType(base_type string, modifiers string, properties string) *RollPointerType {
+func NewRollPointerType(base_type string, modifiers string, properties string) *RollPointerType {
 	width := 7
-	name := make_name(base_type, modifiers, properties)
+	name := Make_Name(base_type, modifiers, properties)
 	return &RollPointerType{
 		name:  name,
 		width: width,
 	}
 }
 
-func (r *RollPointerType) parse_roll_pointer(roll_ptr uint64) *Pointer {
-	is_insert := read_bits_at_offset(roll_ptr, 1, 55) == 1
-	rseg_id := read_bits_at_offset(roll_ptr, 7, 48)
-	page := read_bits_at_offset(roll_ptr, 32, 16)
-	offset := read_bits_at_offset(roll_ptr, 16, 0)
-	undo_log := newAddress(page, offset)
-
-	return newPointer(is_insert, rseg_id, undo_log)
+func (r *RollPointerType) Parse_Roll_Pointer(roll_ptr uint64) *Pointer {
+	is_insert := Read_Bits_At_Offset(roll_ptr, 1, 55) == 1
+	rseg_id := Read_Bits_At_Offset(roll_ptr, 7, 48)
+	page := Read_Bits_At_Offset(roll_ptr, 32, 16)
+	// offset := Read_Bits_At_Offset(roll_ptr, 16, 0)
+	// undo_log := NewAddress(page, offset)
+	undo_log := NewAddress(page)
+	return NewPointer(is_insert, rseg_id, undo_log)
 }
 
-func read_bits_at_offset(data uint64, bits int, offset int) uint64 {
+func Read_Bits_At_Offset(data uint64, bits int, offset int) uint64 {
 	return ((data & (((1 << bits) - 1) << offset)) >> offset)
 }
 
@@ -132,9 +132,9 @@ func BytesToInt(b []byte) uint64 {
 	return uint64(x)
 }
 
-func (r *RollPointerType) value(data []uint8) *Pointer {
+func (r *RollPointerType) Value(data []uint8) *Pointer {
 	roll_ptr := BytesToInt(data)
-	p := r.parse_roll_pointer(roll_ptr)
+	p := r.Parse_Roll_Pointer(roll_ptr)
 	r.p = p
 	return r.p
 }
@@ -144,22 +144,22 @@ type VariableCharacterType struct {
 	width int
 }
 
-func newVariableCharacterType(base_type string, modifiers string, properties string) *VariableCharacterType {
+func NewVariableCharacterType(base_type string, modifiers string, properties string) *VariableCharacterType {
 	width, _ := strconv.Atoi(modifiers)
-	name := make_name(base_type, modifiers, properties)
+	name := Make_Name(base_type, modifiers, properties)
 	return &VariableCharacterType{
 		name:  name,
 		width: width,
 	}
 }
 
-func (r *VariableCharacterType) value(data string) string {
+func (r *VariableCharacterType) Value(data string) string {
 
 	return strings.TrimRight(data, " ")
 
 }
 
-func make_name(base_type string, modifiers string, properties string) string {
+func Make_Name(base_type string, modifiers string, properties string) string {
 	Log.Info("make_name======base_type,%+v\n", base_type)
 	Log.Info("make_name======modifiers,%+v\n", modifiers)
 	Log.Info("make_name======properties,%+v\n", properties)
@@ -174,7 +174,7 @@ func make_name(base_type string, modifiers string, properties string) string {
 
 }
 
-var base_type_width_map = map[string]int{"BOOL": 1, "BOOLEAN": 1, "TINYINT": 1, "SMALLINT": 2, "MEDIUMINT": 3, "INT": 4, "INT6": 6, "BIGINT": 8}
+var BASE_TYPE_WIDTH_MAP = map[string]int{"BOOL": 1, "BOOLEAN": 1, "TINYINT": 1, "SMALLINT": 2, "MEDIUMINT": 3, "INT": 4, "INT6": 6, "BIGINT": 8}
 
 var TYPES = map[string]string{
 	"BIT":        "BitType",
@@ -211,7 +211,7 @@ var TYPES = map[string]string{
 	"ROLL_PTR":   "RollPointerType",
 }
 
-var type_struct_map = map[string]reflect.Type{
+var TYPE_STRUCT_MAP = map[string]reflect.Type{
 	"BOOL":      reflect.TypeOf(&IntegerType{}).Elem(),
 	"BOOLEAN":   reflect.TypeOf(&IntegerType{}).Elem(),
 	"TINYINT":   reflect.TypeOf(&IntegerType{}).Elem(),
@@ -225,31 +225,31 @@ var type_struct_map = map[string]reflect.Type{
 func NewType(base_type string, modifiers string, properties string) (c interface{}, err error) {
 	switch base_type {
 	case "BOOL":
-		return newIntegerType(base_type, modifiers, properties), nil
+		return NewIntegerType(base_type, modifiers, properties), nil
 	case "BOOLEAN":
-		return newIntegerType(base_type, modifiers, properties), nil
+		return NewIntegerType(base_type, modifiers, properties), nil
 	case "TINYINT":
-		return newIntegerType(base_type, modifiers, properties), nil
+		return NewIntegerType(base_type, modifiers, properties), nil
 	case "SMALLINT":
-		return newIntegerType(base_type, modifiers, properties), nil
+		return NewIntegerType(base_type, modifiers, properties), nil
 	case "MEDIUMINT":
-		return newIntegerType(base_type, modifiers, properties), nil
+		return NewIntegerType(base_type, modifiers, properties), nil
 	case "INT":
-		return newIntegerType(base_type, modifiers, properties), nil
+		return NewIntegerType(base_type, modifiers, properties), nil
 	case "INT6":
-		return newIntegerType(base_type, modifiers, properties), nil
+		return NewIntegerType(base_type, modifiers, properties), nil
 	case "BIGINT":
-		return newIntegerType(base_type, modifiers, properties), nil
+		return NewIntegerType(base_type, modifiers, properties), nil
 	case "TRX_ID":
-		return newTransactionIdType(base_type, modifiers, properties), nil
+		return NewTransactionIdType(base_type, modifiers, properties), nil
 	case "ROLL_PTR":
-		return newRollPointerType(base_type, modifiers, properties), nil
+		return NewRollPointerType(base_type, modifiers, properties), nil
 	case "VARCHAR":
-		return newVariableCharacterType(base_type, modifiers, properties), nil
+		return NewVariableCharacterType(base_type, modifiers, properties), nil
 	}
 	return nil, errors.New("not found datatype!")
 }
 
-func newDataType(base_type string, modifiers string, properties string) (c interface{}, err error) {
+func NewDataType(base_type string, modifiers string, properties string) (c interface{}, err error) {
 	return NewType(base_type, modifiers, properties)
 }

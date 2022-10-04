@@ -1,4 +1,4 @@
-package main
+package gibd
 
 const RECORD_INFO_MIN_REC_FLAG = 1
 const RECORD_INFO_DELETED_FLAG = 2
@@ -30,8 +30,8 @@ var RECORD_TYPES = map[uint64]string{
 // 	value     uint64
 // 	extern    uint64
 // }
-type FsegEntry struct {
-}
+// type FsegEntry struct {
+// }
 
 type Record struct {
 	Page   *Page
@@ -39,18 +39,18 @@ type Record struct {
 	//	fields map[string]interface{}
 }
 
-func newRecord(page *Page, record interface{}) *Record {
+func NewRecord(page *Page, record interface{}) *Record {
 	return &Record{
 		Page:   page,
 		record: record,
 	}
 }
 
-func newRecord2() *Record {
+func NewRecord2() *Record {
 	return &Record{}
 }
 
-func (record *Record) get_fields() map[string]interface{} {
+func (record *Record) Get_Fields() map[string]interface{} {
 	fields_hash := make(map[string]interface{})
 	keys := record.record.(*UserRecord).key
 	rows := record.record.(*UserRecord).row

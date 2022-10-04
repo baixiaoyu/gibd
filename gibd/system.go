@@ -1,4 +1,4 @@
-package main
+package gibd
 
 type System struct {
 	config          map[string]string
@@ -7,28 +7,28 @@ type System struct {
 	data_dictionary *DataDictionary
 }
 
-func newSystem(filenames []string) *System {
+func NewSystem(filenames []string) *System {
 	system := new(System)
 	system.config = make(map[string]string)
 	system.config["datadir"] = filenames[0]
 
-	space := newSpace(filenames)
+	space := NewSpace(filenames)
 	system.spaces = make(map[uint64]*Space)
 	system.spaces[space.space_id] = space
-	system.add_space_file(filenames)
-	system.data_dictionary = newDataDictionary(system)
+	system.Add_Space_File(filenames)
+	system.data_dictionary = NewDataDictionary(system)
 	return system
 }
-func (system *System) add_space(space *Space) {
+func (system *System) Add_Space(space *Space) {
 	system.spaces[space.space_id] = space
 }
-func (system *System) add_space_file(space_filenames []string) {
-	space := newSpace(space_filenames)
+func (system *System) Add_Space_File(space_filenames []string) {
+	space := NewSpace(space_filenames)
 	space.innodb_system = system
-	system.add_space(space)
+	system.Add_Space(space)
 }
 
-func (system *System) system_space() *Space {
+func (system *System) System_Space() *Space {
 	for _, value := range system.spaces {
 		if value.innodb_system != nil {
 			return value
@@ -37,9 +37,9 @@ func (system *System) system_space() *Space {
 	return nil
 }
 
-func (system *System) each_table_name() []string {
+func (system *System) Each_Table_Name() []string {
 	var table_names []string
-	tables := system.data_dictionary.each_table()
+	tables := system.data_dictionary.Each_Table()
 	for _, value := range tables {
 		Log.Info("each_table_name===%+v\n", value["NAME"])
 		table_names = append(table_names, value["NAME"].(string))

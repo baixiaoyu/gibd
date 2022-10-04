@@ -1,4 +1,4 @@
-package main
+package gibd
 
 import (
 	"bytes"
@@ -6,6 +6,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+)
+
+// https://blog.jcole.us/2013/01/03/the-basics-of-innodb-space-file-layout/
+const (
+	FIL_PAGE_TYPE_ALLOCATED = 0
+	FIL_PAGE_UNDO_LOG       = 2
+	FIL_PAGE_INODE          = 3
+	FIL_PAGE_IBUF_BITMAP    = 5
+	FIL_PAGE_TYPE_SYS       = 6
+
+	FIL_PAGE_TYPE_TRX_SYS = 7
+	FIL_PAGE_TYPE_FSP_HDR = 8
+	FIL_PAGE_INDEX        = 17855
+	FIL_PAGE_RTREE        = 17854
 )
 
 var PAGE_TYPE = map[int]string{
@@ -32,14 +46,14 @@ var PAGE_TYPE = map[int]string{
 }
 
 type Address struct {
-	Page   uint64 `json:"page"`
-	Offset uint64 `json:"offset"`
+	Page uint64 `json:"pageno"`
+	// Offset uint64 `json:"offset"`
 }
 
-func newAddress(Page uint64, Offset uint64) *Address {
+func NewAddress(Page uint64) *Address {
 	return &Address{
-		Page:   Page,
-		Offset: Offset,
+		Page: Page,
+		// Offset: Offset,
 	}
 
 }
@@ -55,7 +69,7 @@ type FilHeader struct {
 	Space_id  uint64 `json:"space_id"`
 }
 
-func (s *FilHeader) lsn_low32(offset uint64) uint64 {
+func (s *FilHeader) Lsn_Low32(offset uint64) uint64 {
 	return s.Lsn & 0xffffffff
 }
 
@@ -65,13 +79,13 @@ func (filHeader FilHeader) String() string {
 }
 
 type FilTrailer struct {
-	checksum  uint64
-	lsn_low32 uint64
+	Checksum  uint64 `json:"checksum"`
+	Lsn_low32 uint64 `json:"lsn_low32"`
 }
 
 func (filTrailer FilTrailer) String() string {
 
-	res := "checksum:" + strconv.FormatUint(filTrailer.checksum, 10) + ",offset:" + strconv.FormatUint(filTrailer.lsn_low32, 10)
+	res := "checksum:" + strconv.FormatUint(filTrailer.Checksum, 10) + ",offset:" + strconv.FormatUint(filTrailer.Lsn_low32, 10)
 	return res
 }
 
@@ -91,38 +105,68 @@ type Page struct {
 	Buffer           *[]byte    `json:"-"`
 	Page_number      uint64     `json:"page_number"`
 	record_describer interface{}
+	Fsphdxdes        FspHdrXdes `json:"fsphdxdes"` // 这个只是在表空间的第一个页上有
 }
 
-func newPage(space *Space, buffer *[]byte, page_number uint64) *Page {
+func NewPage(space *Space, buffer *[]byte, page_number uint64) *Page {
 	p := &Page{
 		Space:       space,
 		Buffer:      buffer,
 		Page_number: page_number,
 	}
-	p.fil_header()
-	p.fil_trailer()
+	p.Fil_Header()
+	p.Fil_Trailer()
 	return p
 
 }
 
-func (p *Page) page_dump() {
+func (p *Page) Page_Dump() {
 	println()
-	fmt.Println("fil header:")
+	fmt.Println("fil header and tailer:")
+	p.Fil_Header()
+	p.Fil_Trailer()
 
-	p.fil_header()
-	p.fil_trailer()
-	jsons, _ := json.Marshal(p)
-	println(string(jsons))
+	// jsons, _ := json.Marshal(p)
+	// println(string(jsons))
 
 	println()
-	if p.FileHeader.Page_type == 6 {
-		dict_header := newSysDataDictionaryHeader(p)
-		dict_header.dump()
+	println("Page_type==%d", p.FileHeader.Page_type)
+	if p.FileHeader.Page_type == FIL_PAGE_TYPE_SYS {
+		dict_header := NewSysDataDictionaryHeader(p)
+		dict_header.Dump()
+	}
+	if p.FileHeader.Page_type == FIL_PAGE_TYPE_FSP_HDR {
+		fmt.Println("fsp header:")
+		fsphdxdes := NewFspHdrXdes()
+		p.Fsphdxdes = fsphdxdes
+		p.Fsphdxdes.Fsp_Header(p)
+		// TODO
+		// fspPage := FspPage(p)
+		// fspPage.Dump()
+	}
+	if p.FileHeader.Page_type == FIL_PAGE_IBUF_BITMAP {
+		// TODO
+	}
+
+	if p.FileHeader.Page_type == FIL_PAGE_INODE {
+		// TODO
+
+	}
+	if p.FileHeader.Page_type == FIL_PAGE_INDEX {
+		// TODO
+
+	}
+	if p.FileHeader.Page_type == FIL_PAGE_TYPE_ALLOCATED {
+		// do nothing
+	}
+
+	if p.FileHeader.Page_type == FIL_PAGE_UNDO_LOG {
+		// undo block parse
 	}
 
 }
 
-func (p *Page) bufferReadat(offset int64, size int64) int {
+func (p *Page) BufferReadAt(offset int64, size int64) int {
 
 	byteStorage := make([]byte, size)
 	byteReader := bytes.NewReader(*p.Buffer)
@@ -131,7 +175,7 @@ func (p *Page) bufferReadat(offset int64, size int64) int {
 	return p.BytesToUIntLittleEndian(byteStorage)
 }
 
-func (p *Page) readbytes(offset int64, size int64) []byte {
+func (p *Page) ReadBytes(offset int64, size int64) []byte {
 
 	byteStorage := make([]byte, size)
 	byteReader := bytes.NewReader(*p.Buffer)
@@ -200,56 +244,60 @@ func (p *Page) BytesToIntLittleEndian(b []byte) int {
 
 func (p Page) String() string {
 
-	page_offset := p.bufferReadat(4, 4)
-	page_type := p.bufferReadat(24, 2)
+	page_offset := p.BufferReadAt(4, 4)
+	page_type := p.BufferReadAt(24, 2)
 	res := "page: " + strconv.Itoa(page_offset) + ",type=" + PAGE_TYPE[page_type]
 	return res
 }
 
-func (p *Page) pos_fil_header() uint64 {
+func (p *Page) Pos_Fil_Header() uint64 {
 	return 0
 }
 
-func (p *Page) fil_header() {
+func (p *Page) Fil_Header() {
 
-	p.FileHeader.Checksum = uint64(p.bufferReadat(int64(p.pos_fil_header()), 4))
-	p.FileHeader.Offset = uint64(p.bufferReadat(int64(p.pos_fil_header())+4, 4))
-	p.FileHeader.Prev = uint64(p.bufferReadat(int64(p.pos_fil_header())+8, 4))
-	p.FileHeader.Next = uint64(p.bufferReadat(int64(p.pos_fil_header())+12, 4))
-	p.FileHeader.Lsn = uint64(p.bufferReadat(int64(p.pos_fil_header())+16, 8))
-	p.FileHeader.Page_type = uint64(p.bufferReadat(int64(p.pos_fil_header())+24, 2))
-	p.FileHeader.Flush_lsn = uint64(p.bufferReadat(int64(p.pos_fil_header())+26, 8))
-	p.FileHeader.Space_id = uint64(p.bufferReadat(int64(p.pos_fil_header())+34, 4))
+	p.FileHeader.Checksum = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header()), 4)) // 这个是checksum还是FIL_PAGE_SPACE
+	p.FileHeader.Offset = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+4, 4))
+	p.FileHeader.Prev = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+8, 4))
+	p.FileHeader.Next = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+12, 4))
+	p.FileHeader.Lsn = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+16, 8))
+	p.FileHeader.Page_type = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+24, 2))
+	p.FileHeader.Flush_lsn = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+26, 8))
+	p.FileHeader.Space_id = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+34, 4))
 }
 
-func (p *Page) fil_trailer() {
-	p.FileTrailer.checksum = uint64(p.bufferReadat(int64(p.pos_fil_trailer()), 4))
-	p.FileTrailer.lsn_low32 = uint64(p.bufferReadat(int64(p.pos_fil_trailer())+4, 4))
+func (p *Page) Fil_Trailer() {
+	p.FileTrailer.Checksum = uint64(p.BufferReadAt(int64(p.Pos_Fil_Trailer()), 4))
+	p.FileTrailer.Lsn_low32 = uint64(p.BufferReadAt(int64(p.Pos_Fil_Trailer())+4, 4))
 }
 
-func (p *Page) size_fil_header() uint64 { //38
+func (p *Page) Size_Fil_Header() uint64 { //38
 	return 4 + 4 + 4 + 4 + 8 + 2 + 8 + 4
 }
 
-func (p *Page) pos_partial_page_header() uint64 {
-	return p.pos_fil_header() + 4
+func (p *Page) Pos_Partial_Page_Header() uint64 {
+	return p.Pos_Fil_Header() + 4
 }
 
-func (p *Page) size_partial_page_header() uint64 {
-	return p.size_fil_header() - 4 - 8 - 4
+func (p *Page) Size_Partial_Page_Header() uint64 {
+	return p.Size_Fil_Header() - 4 - 8 - 4
 }
-func (p *Page) size_fil_trailer() uint64 {
+func (p *Page) Size_Fil_Trailer() uint64 {
 	return 4 + 4
 }
 
-func (p *Page) pos_fil_trailer() uint64 {
-	return DEFAULT_PAGE_SIZE - p.size_fil_trailer()
+func (p *Page) Pos_Fil_Trailer() uint64 {
+	return DEFAULT_PAGE_SIZE - p.Size_Fil_Trailer()
 }
 
-func (p *Page) pos_page_body() uint64 {
-	return p.pos_fil_header() + p.size_fil_header()
+func (p *Page) Pos_Page_Body() uint64 {
+	return p.Pos_Fil_Header() + p.Size_Fil_Header()
 }
 
-func (p *Page) size_page_body() uint64 {
-	return DEFAULT_PAGE_SIZE - p.size_fil_trailer() - p.size_fil_header()
+func (p *Page) Size_Page_Body() uint64 {
+	return DEFAULT_PAGE_SIZE - p.Size_Fil_Trailer() - p.Size_Fil_Header()
+}
+
+func Pos_Page_Body() uint64 {
+	return 38
 }
