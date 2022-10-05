@@ -210,7 +210,6 @@ func (s *Space) Data_Dictionary_Page() *Page {
 }
 
 func (Space Space) String() string {
-	println("why not me")
 	res := "space: " + Space.name + ",pages=" + strconv.FormatUint(Space.Pages, 10)
 	return res
 }

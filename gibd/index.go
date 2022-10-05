@@ -24,90 +24,6 @@ func NewFsegHeader() *FsegHeader {
 
 }
 
-// record format https://blog.jcole.us/2013/01/10/the-physical-structure-of-records-in-innodb/
-type RecordHeader struct {
-	Offset      uint64         `json:"offset"`
-	Length      uint64         `json:"length"`
-	Next        uint64         `json:"next"`
-	Prev        uint64         `json:"prev"`
-	Record_Type string         `json:"type"`
-	Heap_Number uint64         `json:"heap_number"`
-	N_owned     uint64         `json:"n_owned"`
-	Info_flags  uint64         `json:"info_flags"`
-	Offset_size uint64         `json:"offset_size"`
-	N_fields    uint64         `json:"n_fields"`
-	Nulls       []string       `json:"nulls"`
-	Lengths     map[string]int `json:"lengths"`
-	Externs     []string       `json:"externs"`
-}
-
-func NewRecordHeader(offset uint64) *RecordHeader {
-	return &RecordHeader{Offset: offset}
-
-}
-
-type SystemRecord struct {
-	offset uint64
-	header *RecordHeader
-	next   uint64
-	data   []byte
-	length uint64
-}
-
-func NewSystemRecord(offset uint64, header *RecordHeader, next uint64, data []byte, length uint64) *SystemRecord {
-
-	return &SystemRecord{
-		offset: offset, header: header, next: next, data: data, length: length,
-	}
-
-}
-
-type UserRecord struct {
-	record_type       string
-	format            string
-	offset            uint64
-	header            *RecordHeader
-	next              uint64
-	key               []*FieldDescriptor
-	row               []*FieldDescriptor
-	sys               []*FieldDescriptor
-	child_page_number uint64
-	transaction_id    uint64
-	roll_pointer      *Pointer
-	length            uint64
-}
-
-func (s *UserRecord) String() string {
-	return fmt.Sprintf("[record_type => %v, format => %v, offset => %v, next => %v, child_page_number=> %v transaction_id=> %v roll_pointer=>%v length=> %v]",
-		s.record_type, s.format, s.offset, s.next, s.child_page_number, s.transaction_id, s.roll_pointer, s.length)
-}
-
-func NewUserRecord(format string, offset uint64, header *RecordHeader, next uint64) *UserRecord {
-	return &UserRecord{
-
-		format: format,
-		offset: offset,
-		header: header,
-		next:   next,
-	}
-}
-
-type FieldDescriptor struct {
-	name       string
-	field_type string
-	value      interface{}
-	extern     *ExternReference
-}
-
-func NewFieldDescriptor(name string, field_type string, value interface{}, extern *ExternReference) *FieldDescriptor {
-	return &FieldDescriptor{
-		name:       name,
-		field_type: field_type,
-		value:      value,
-		extern:     extern,
-	}
-}
-
 type PageHeader struct {
 	N_dir_slots        uint64 `json:"n_dir_slots"`
 	Heap_top           uint64 `json:"heap_top"`
@@ -166,6 +82,7 @@ func (index *Index) Size_Fseg_Header() uint64 {
 	return 2 * FsegEntry_SIZE
 }
 
+//compact 2+3
 func (index *Index) Size_Record_Header() uint64 {
 	switch index.PageHeader.Format {
 	case "compact":
@@ -190,15 +107,18 @@ func (index *Index) Size_Mum_Record() uint64 {
 	return 8
 }
 func (index *Index) Pos_Infimum() uint64 {
-
-	return index.Pos_Records() + index.Size_Record_Header() + index.Size_Mum_Record_Header_Additional()
+	a := index.Pos_Records()
+	b := index.Size_Record_Header()
+	c := index.Size_Mum_Record_Header_Additional()
+	// return index.Pos_Records() + index.Size_Record_Header() + index.Size_Mum_Record_Header_Additional()
+	return a + b + c
 }
 
 func (index *Index) Pos_Supremum() uint64 {
 	return index.Pos_Infimum() + index.Size_Record_Header() + index.Size_Mum_Record_Header_Additional() + index.Size_Mum_Record()
 }
 
-func (index *Index) Pos_Records() uint64 { //10+36+38
+func (index *Index) Pos_Records() uint64 { //20+36+38
 	return index.Page.Size_Fil_Header() + index.Size_Index_Header() + index.Size_Fseg_Header()
 }
 
@@ -319,111 +239,8 @@ func (index *Index) page(page_number uint64) *Page {
 	return page
 }
 
-type RecordCursor struct {
-	Initial   bool
-	Index     *Index
-	Direction string
-	Record    *Record
-}
-
-const min = 0
-const max = 4294967295
-
-func (rc *RecordCursor) Initial_Record(offset uint64) *Record {
-	switch offset {
-	case min:
-		return rc.Index.Min_Record()
-	case max:
-		return rc.Index.Max_Record()
-	default:
-		return rc.Index.record(uint64(offset))
-	}
-}
-
-func NewRecordCursor(index *Index, offset uint64, direction string) *RecordCursor {
-	Initial := true
-	Index := index
-	Direction := direction
-	a := RecordCursor{Initial: Initial, Index: Index, Direction: Direction}
-	a.Record = a.Initial_Record(offset)
-	return &a
-}
-func (rc *RecordCursor) record() *Record {
-	//var records *Record
-	if rc.Initial == true {
-		rc.Initial = false
-		return rc.Record
-	}
-	switch rc.Direction {
-	case "forward":
-		return rc.Next_Record()
-	case "backward":
-		return rc.Prev_Record()
-	}
-	return nil
-}
-
 // var page_record_cursor_next_record int
 
-func (rc *RecordCursor) Next_Record() *Record {
-	// page_record_cursor_next_record = page_record_cursor_next_record + 1
-
-	rec := rc.Index.record(rc.Record.record.(*UserRecord).header.Next)
-
-	var next_record_offset uint64
-	var rc_record_offset uint64
-
-	supremum := rc.Index.Supremum()
-	rc_record_offset = rc.Record.record.(*UserRecord).offset
-	switch rec.record.(type) {
-	case *UserRecord:
-
-		next_record_offset = rec.record.(*UserRecord).offset
-		next_record := rec.record.(*UserRecord)
-		if (next_record.header.Next == supremum.record.(*SystemRecord).header.Next) || next_record_offset == rc_record_offset {
-			return nil
-		} else {
-			return rec
-		}
-	case *SystemRecord:
-		next_record_offset = rec.record.(*SystemRecord).offset
-		next_record := rec.record.(*SystemRecord)
-		if (next_record.header.Next == supremum.record.(*SystemRecord).header.Next) || next_record_offset == rc_record_offset {
-			return nil
-		} else {
-			return rec
-		}
-	}
-	// switch rc.Record.record.(type) {
-	// case UserRecord:
-	// 	rc_record_offset = rc.Record.record.(*UserRecord).offset
-	// case SystemRecord:
-	// 	rc_record_offset = rc.Record.record.(*SystemRecord).offset
-	// }
-	// switch rec.record.(type) {
-	// case UserRecord:
-	// 	next_record_offset = rec.record.(*UserRecord).offset
-	// case SystemRecord:
-	// 	next_record_offset = rec.record.(*SystemRecord).offset
-	// }
-	// Log.Info("next_record this record's offset is========>%+v\n", rc_record_offset)
-	// Log.Info("next_record next record's offset is========>%+v\n", next_record_offset)
-
-	//Log.Info("next_record this record's page number is========>%+v\n", next_record_offset)
-	// Log.Info("next_record supremum header.next is========>%+v\n", supremum.record.(*SystemRecord).header.next)
-	// Log.Info("next_record record header.next is========>%+v\n", rec.record.(*UserRecord).header.next)
-	return nil
-}
-
-func (rc *RecordCursor) Prev_Record() *Record {
-	var records *Record
-	return records
-}
-
-func (index *Index) Record_Cursor(offset uint64, direction string) *RecordCursor {
-
-	return NewRecordCursor(index, offset, direction)
-}
 func (index *Index) each_record() []*Record {
 	var records []*Record
 
@@ -450,7 +267,7 @@ func (index *Index) Min_Record() *Record {
 		fmt.Println("failed")
 		return nil
 	}
-	Log.Info("min_record infimum.next==========================================>%+v\n", value.next)
+
 	min := index.record(uint64(value.next))
 
 	return min
@@ -495,6 +312,7 @@ func (index *Index) Record_Fields() []*RecordField {
 
 func (index *Index) record(offset uint64) *Record {
 	var rec_len uint64
+
 	if offset == index.Pos_Infimum() {
 		return index.Infimum()
 	} else if offset == index.Pos_Supremum() {
@@ -502,7 +320,6 @@ func (index *Index) record(offset uint64) *Record {
 	}
 
 	header, header_len := index.Record_Header(offset)
-	Log.Info("record() get header=====>%+v\n", header)
 
 	rec_len += header_len
 
@@ -512,13 +329,14 @@ func (index *Index) record(offset uint64) *Record {
 	} else {
 		next = header.Next
 	}
+
 	this_record := NewUserRecord(
 		index.PageHeader.Format,
 		offset,
 		header,
 		next,
 	)
-	Log.Info("record() this_record_offset =========>%+v\n", offset)
+
 	rf := index.Get_Record_Format()
 
 	index.Record_Format = rf
@@ -896,6 +714,7 @@ func (index *Index) Supremum() *Record {
 }
 
 func (index *Index) System_Record(offset uint64) *Record {
+
 	header, _ := index.Record_Header(offset)
 	index.recordHeader = header
 	data := index.Page.ReadBytes(int64(offset), int64(index.Size_Mum_Record()))
@@ -911,40 +730,42 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 	var header_len uint64
 	switch index.PageHeader.Format {
 	case "compact":
+		// 这个next是相对的offset, 需要加上当前的offset
+		header.Next = uint64(index.Page.BufferReadAtToSignInt(int64(offset)-2, 2)) + offset
 
-		header.Next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
 		bits1 := uint64(index.Page.BufferReadAt(int64(offset)-4, 2))
+
 		header.Record_Type = RECORD_TYPES[bits1&0x07]
 		header.Heap_Number = (bits1 & 0xfff8) >> 3
 
-		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-6, 1))
+		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-5, 1))
 		header.N_owned = bits2 & 0x0f
 		header.Info_flags = (bits2 & 0xf0) >> 4
 		index.Record_Header_Compact_Additional(header, offset)
-		header_len = 2 + 2 + 1 + 0 //0 代表record_header_compact_additional中处理记录，先不看
+		header_len = 2 + 2 + 1 + 0 //0 代表record_header_compact_additional中处理记录
 
 	case "redundant":
-		// header.next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
-		// //bytes := index.Page.readbytes(int64(offset)-2, 2)
-		// bits1 := uint64(index.Page.BufferReadAt(int64(offset)-5, 3))
-		// if (bits1 & 1) == 0 {
-		// 	header.offset_size = 2
-		// } else {
-		// 	header.offset_size = 1
-		// }
+		header.Next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
+		//bytes := index.Page.readbytes(int64(offset)-2, 2)
+		bits1 := uint64(index.Page.BufferReadAt(int64(offset)-5, 3))
+		if (bits1 & 1) == 0 {
+			header.Offset_size = 2
+		} else {
+			header.Offset_size = 1
+		}
 
-		// header.n_fields = (bits1 & (((1 << 10) - 1) << 1)) >> 1
-		// header.heap_number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
+		header.N_fields = (bits1 & (((1 << 10) - 1) << 1)) >> 1
+		header.Heap_Number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
 
-		// bits2 := uint64(index.Page.BufferReadAt(int64(offset)-6, 1))
-		// offset = offset - 6
-		// header.n_owned = bits2 & 0x0f
-		// header.info_flags = (bits2 & 0xf0) >> 4
-		// //header.heap_number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
+		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-6, 1))
+		offset = offset - 6
+		header.N_owned = bits2 & 0x0f
+		header.Info_flags = (bits2 & 0xf0) >> 4
+		//header.heap_number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
 
-		// index.Record_Header_Redundant_Additional(header, offset)
-		// header_len = 2 + 3 + 1 + 0 //0 代表record_header_redundant_additional中处理记录，先不看
-		// header.length = header_len
+		index.Record_Header_Redundant_Additional(header, offset)
+		header_len = 2 + 3 + 1 + 0 //0 代表record_header_redundant_additional中处理记录，先不看
+		header.Length = header_len
 
 	}
 

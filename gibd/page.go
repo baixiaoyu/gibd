@@ -179,6 +179,15 @@ func (p *Page) BufferReadAt(offset int64, size int64) int {
 	return p.BytesToUIntLittleEndian(byteStorage)
 }
 
+func (p *Page) BufferReadAtToSignInt(offset int64, size int64) int {
+
+	byteStorage := make([]byte, size)
+	byteReader := bytes.NewReader(*p.Buffer)
+	byteReader.ReadAt(byteStorage, offset)
+
+	return p.BytesToIntLittleEndian(byteStorage)
+}
+
 func (p *Page) ReadBytes(offset int64, size int64) []byte {
 
 	byteStorage := make([]byte, size)

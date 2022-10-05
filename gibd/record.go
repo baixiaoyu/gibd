@@ -1,5 +1,7 @@
 package gibd
 
+import "fmt"
+
 const RECORD_INFO_MIN_REC_FLAG = 1
 const RECORD_INFO_DELETED_FLAG = 2
 const RECORD_NEXT_SIZE = 2
@@ -24,14 +26,27 @@ var RECORD_TYPES = map[uint64]string{
 	3: "supremum",     // The system "supremum" record.
 }
 
-// type FieldDescriptor struct {
-// 	name      string
-// 	desc_type uint64
-// 	value     uint64
-// 	extern    uint64
-// }
-// type FsegEntry struct {
-// }
+// record format https://blog.jcole.us/2013/01/10/the-physical-structure-of-records-in-innodb/
+type RecordHeader struct {
+	Offset      uint64         `json:"offset"`
+	Length      uint64         `json:"length"`
+	Next        uint64         `json:"next"`
+	Prev        uint64         `json:"prev"`
+	Record_Type string         `json:"type"`
+	Heap_Number uint64         `json:"heap_number"`
+	N_owned     uint64         `json:"n_owned"`
+	Info_flags  uint64         `json:"info_flags"`
+	Offset_size uint64         `json:"offset_size"`
+	N_fields    uint64         `json:"n_fields"`
+	Nulls       []string       `json:"nulls"`
+	Lengths     map[string]int `json:"lengths"`
+	Externs     []string       `json:"externs"`
+}
+
+func NewRecordHeader(offset uint64) *RecordHeader {
+	return &RecordHeader{Offset: offset}
+
+}
 
 type Record struct {
 	Page   *Page
@@ -68,4 +83,66 @@ func (record *Record) Get_Fields() map[string]interface{} {
 	}
 	return fields_hash
 
+}
+
+type SystemRecord struct {
+	offset uint64
+	header *RecordHeader
+	next   uint64
+	data   []byte
+	length uint64
+}
+
+func NewSystemRecord(offset uint64, header *RecordHeader, next uint64, data []byte, length uint64) *SystemRecord {
+
+	return &SystemRecord{
+		offset: offset, header: header, next: next, data: data, length: length,
+	}
+
+}
+
+type UserRecord struct {
+	record_type       string
+	format            string
+	offset            uint64
+	header            *RecordHeader
+	next              uint64
+	key               []*FieldDescriptor
+	row               []*FieldDescriptor
+	sys               []*FieldDescriptor
+	child_page_number uint64
+	transaction_id    uint64
+	roll_pointer      *Pointer
+	length            uint64
+}
+
+func NewUserRecord(format string, offset uint64, header *RecordHeader, next uint64) *UserRecord {
+	return &UserRecord{
+
+		format: format,
+		offset: offset,
+		header: header,
+		next:   next,
+	}
+}
+
+func (s *UserRecord) String() string {
+	return fmt.Sprintf("[record_type => %v, format => %v, offset => %v, next => %v, child_page_number=> %v transaction_id=> %v roll_pointer=>%v length=> %v]",
+		s.record_type, s.format, s.offset, s.next, s.child_page_number, s.transaction_id, s.roll_pointer, s.length)
+}
+
+type FieldDescriptor struct {
+	name       string
+	field_type string
+	value      interface{}
+	extern     *ExternReference
+}
+
+func NewFieldDescriptor(name string, field_type string, value interface{}, extern *ExternReference) *FieldDescriptor {
+	return &FieldDescriptor{
+		name:       name,
+		field_type: field_type,
+		value:      value,
+		extern:     extern,
+	}
 }

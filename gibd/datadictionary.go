@@ -161,6 +161,7 @@ func (dh *DataDictionary) Each_Table() []map[string]interface{} {
 func (dh *DataDictionary) Each_Index() []map[string]interface{} {
 
 	res := dh.Each_Record_From_Data_Dictionary_Index("SYS_INDEXES", "PRIMARY")
+	fmt.Printf("res %v", res)
 	var all_record_field []map[string]interface{}
 	for i := 0; i < len(res); i++ {
 		Log.Info("each_index each index======>%+v", res[i])
@@ -182,9 +183,9 @@ func (dh *DataDictionary) Each_Record_From_Data_Dictionary_Index(table string, i
 
 	Log.Info("each_record_from_data_dictionary_index 所有的记录数%+v\n", len(records))
 	Log.Info("each_record_from_data_dictionary_index 所有的记录%+v\n", records)
-	for i := 0; i < len(records); i++ {
-		Log.Info("each_record_from_data_dictionary_index_page_number======>%+v\n", records[i].Get_Fields())
-	}
+	// for i := 0; i < len(records); i++ {
+	// 	Log.Info("each_record_from_data_dictionary_index_page_number======>%+v\n", records[i].Get_Fields())
+	// }
 	return records
 }
 
