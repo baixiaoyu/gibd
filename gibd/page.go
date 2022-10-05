@@ -130,7 +130,7 @@ func (p *Page) Page_Dump() {
 	// println(string(jsons))
 
 	println()
-	println("Page_type==%d", p.FileHeader.Page_type)
+
 	if p.FileHeader.Page_type == FIL_PAGE_TYPE_SYS {
 		dict_header := NewSysDataDictionaryHeader(p)
 		dict_header.Dump()
