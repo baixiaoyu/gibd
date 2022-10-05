@@ -145,13 +145,13 @@ func (rf *RecordField) Value_By_Length(offset uint64, field_length int64, index 
 func (rf *RecordField) length(record *UserRecord) int64 {
 	var len int64
 	name_in_map := false
-	for k, _ := range record.header.lengths {
+	for k, _ := range record.header.Lengths {
 		if rf.name == k {
 			name_in_map = true
 		}
 	}
 	if name_in_map {
-		len = int64(record.header.lengths[rf.name])
+		len = int64(record.header.Lengths[rf.name])
 	} else {
 		switch value := rf.data_type.(type) {
 		case IntegerType:
@@ -172,8 +172,8 @@ func (rf *RecordField) length(record *UserRecord) int64 {
 }
 
 func (rf *RecordField) Is_Extern(record *UserRecord) bool {
-	for i := 0; i < len(record.header.externs); i++ {
-		if rf.name == record.header.externs[i] {
+	for i := 0; i < len(record.header.Externs); i++ {
+		if rf.name == record.header.Externs[i] {
 			return true
 		}
 	}

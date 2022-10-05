@@ -48,3 +48,272 @@
 2022/10/04 16:45:19.475 [I] [index.go:245]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
 2022/10/04 16:45:42.673 [I] [index.go:450]  min_record infimum.next==========================================>13
 
+2022/10/05 11:51:26.963 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 11:51:26.964 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 11:51:26.964 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 11:51:26.964 [I] [index.go:501]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 11:51:26.964 [I] [index.go:517]  record() this_record_offset =========>13
+
+2022/10/05 11:51:26.964 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:07:35.271 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:07:35.272 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:07:42.012 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:07:42.012 [I] [index.go:501]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:07:42.012 [I] [index.go:517]  record() this_record_offset =========>13
+
+2022/10/05 12:25:37.388 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:25:37.388 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:25:37.389 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:25:37.389 [I] [index.go:504]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:25:37.389 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:25:37.389 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:25:37.389 [I] [index.go:504]  record() get header=====>&{length:5 next:0 prev:0 record_type:conventional heap_number:0 n_owned:0 info_flags:0 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:25:37.389 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:25:37.389 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:25:37.389 [I] [index.go:893]  supremum(),next=>0
+2022/10/05 12:25:37.389 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:26:11.734 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:26:11.734 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:26:11.735 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:26:11.735 [I] [index.go:504]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:26:11.735 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:26:11.735 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:26:11.735 [I] [index.go:504]  record() get header=====>&{length:5 next:0 prev:0 record_type:conventional heap_number:0 n_owned:0 info_flags:0 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:26:11.735 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:26:11.735 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:26:11.735 [I] [index.go:891]  supremum(),next=>0
+2022/10/05 12:26:11.735 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:29:27.517 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:29:27.517 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:29:27.518 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:29:27.518 [I] [index.go:504]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:29:27.518 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:29:27.518 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:29:27.518 [I] [index.go:504]  record() get header=====>&{length:5 next:0 prev:0 record_type:conventional heap_number:0 n_owned:0 info_flags:0 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:29:27.518 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:29:27.518 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:29:27.518 [I] [index.go:892]  supremum(),next=>0
+2022/10/05 12:29:27.518 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:29:51.121 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:29:51.122 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:29:51.122 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:29:51.122 [I] [index.go:504]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:29:51.122 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:29:51.122 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:29:51.122 [I] [index.go:504]  record() get header=====>&{length:5 next:0 prev:0 record_type:conventional heap_number:0 n_owned:0 info_flags:0 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:29:51.122 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:29:51.122 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:29:51.122 [I] [index.go:892]  supremum(),next=>0
+2022/10/05 12:29:51.122 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:31:22.970 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:31:22.970 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:32:43.747 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:33:46.397 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:33:46.397 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:33:46.397 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:33:46.397 [I] [index.go:504]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:33:46.397 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:33:46.397 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:33:46.397 [I] [index.go:504]  record() get header=====>&{length:5 next:0 prev:0 record_type:conventional heap_number:0 n_owned:0 info_flags:0 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:33:46.397 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:33:46.397 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:33:46.397 [I] [index.go:892]  supremum(),next=>0
+2022/10/05 12:33:46.397 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:34:42.967 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:34:42.967 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:34:42.967 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:34:42.967 [I] [index.go:504]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:34:42.967 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:34:42.967 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:34:42.967 [I] [index.go:504]  record() get header=====>&{length:5 next:0 prev:0 record_type:conventional heap_number:0 n_owned:0 info_flags:0 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:34:42.967 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:34:42.967 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:34:42.967 [I] [index.go:892]  supremum(),next=>0
+2022/10/05 12:34:42.967 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:35:20.624 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:35:20.625 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:35:20.625 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:35:20.625 [I] [index.go:504]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:35:20.625 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:35:20.625 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:35:20.625 [I] [index.go:504]  record() get header=====>&{length:5 next:0 prev:0 record_type:conventional heap_number:0 n_owned:0 info_flags:0 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:35:20.625 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:35:20.625 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:35:20.625 [I] [index.go:892]  supremum(),next=>0
+2022/10/05 12:35:20.625 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:35:58.786 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:35:58.786 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:35:58.786 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:35:58.786 [I] [index.go:504]  record() get header=====>&{length:5 next:65535 prev:0 record_type: heap_number:8191 n_owned:15 info_flags:15 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:35:58.786 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:35:58.786 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:35:58.786 [I] [index.go:504]  record() get header=====>&{length:5 next:0 prev:0 record_type:conventional heap_number:0 n_owned:0 info_flags:0 offset_size:0 n_fields:0 nulls:[] lengths:map[] externs:[]}
+
+2022/10/05 12:35:58.786 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:35:58.786 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:35:58.787 [I] [index.go:892]  supremum(),next=>0
+2022/10/05 12:35:58.787 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:43:11.007 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:43:11.008 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:43:11.008 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:43:11.008 [I] [index.go:504]  record() get header=====>&{Length:5 Next:65535 Prev:0 Record_Type: Heap_Number:8191 N_owned:15 Info_flags:15 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:43:11.008 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:43:11.008 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:43:11.008 [I] [index.go:504]  record() get header=====>&{Length:5 Next:0 Prev:0 Record_Type:conventional Heap_Number:0 N_owned:0 Info_flags:0 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:43:11.008 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:43:11.008 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:43:11.008 [I] [index.go:892]  supremum(),next=>0
+2022/10/05 12:43:11.008 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:45:21.938 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:45:21.939 [I] [index.go:247]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":631672185,"offset":3,"prev":4294967295,"next":4294967295,"lsn":53831130009,"page_type":17855,"flush_lsn":0,"space_id":479},"filetrailer":{"checksum":631672185,"lsn_low32":2291522457},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/05 12:45:21.939 [I] [index.go:452]  min_record infimum.next==========================================>13
+
+2022/10/05 12:45:21.939 [I] [index.go:504]  record() get header=====>&{Length:5 Next:65535 Prev:0 Record_Type: Heap_Number:8191 N_owned:3 Info_flags:0 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:45:21.939 [I] [index.go:520]  record() this_record_offset =========>13
+
+2022/10/05 12:45:21.939 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:45:21.939 [I] [index.go:504]  record() get header=====>&{Length:5 Next:0 Prev:0 Record_Type:conventional Heap_Number:0 N_owned:0 Info_flags:0 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:45:21.939 [I] [index.go:520]  record() this_record_offset =========>65535
+
+2022/10/05 12:45:21.939 [I] [index.go:471]  record_fields,key ==========<nil>
+
+2022/10/05 12:45:21.939 [I] [index.go:892]  supremum(),next=>0
+2022/10/05 12:45:21.939 [I] [index.go:436]  each_record_size is ========>2
+
+2022/10/05 12:52:49.165 [I] [index.go:248]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":3986404394,"offset":3,"prev":4294967295,"next":4294967295,"lsn":56778826281,"page_type":17855,"flush_lsn":0,"space_id":427},"filetrailer":{"checksum":3986404394,"lsn_low32":944251433},"region":{},"space":{"Pages":7},"page_number":3}
+2022/10/05 12:52:49.165 [I] [index.go:248]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":3986404394,"offset":3,"prev":4294967295,"next":4294967295,"lsn":56778826281,"page_type":17855,"flush_lsn":0,"space_id":427},"filetrailer":{"checksum":3986404394,"lsn_low32":944251433},"region":{},"space":{"Pages":7},"page_number":3}
+2022/10/05 12:52:49.166 [I] [index.go:453]  min_record infimum.next==========================================>28
+
+2022/10/05 12:52:49.166 [I] [index.go:505]  record() get header=====>&{Offset:0 Length:5 Next:0 Prev:0 Record_Type: Heap_Number:2231 N_owned:2 Info_flags:2 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:52:49.166 [I] [index.go:521]  record() this_record_offset =========>28
+
+2022/10/05 12:52:49.166 [I] [index.go:472]  record_fields,key ==========<nil>
+
+2022/10/05 12:52:49.166 [I] [index.go:505]  record() get header=====>&{Offset:0 Length:5 Next:0 Prev:0 Record_Type:conventional Heap_Number:0 N_owned:0 Info_flags:0 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:52:49.166 [I] [index.go:521]  record() this_record_offset =========>0
+
+2022/10/05 12:52:49.166 [I] [index.go:472]  record_fields,key ==========<nil>
+
+2022/10/05 12:52:49.166 [I] [index.go:893]  supremum(),next=>0
+2022/10/05 12:52:49.166 [I] [index.go:437]  each_record_size is ========>2
+
+2022/10/05 12:54:54.284 [I] [index.go:248]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":3986404394,"offset":3,"prev":4294967295,"next":4294967295,"lsn":56778826281,"page_type":17855,"flush_lsn":0,"space_id":427},"filetrailer":{"checksum":3986404394,"lsn_low32":944251433},"region":{},"space":{"Pages":7},"page_number":3}
+2022/10/05 12:54:54.284 [I] [index.go:248]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":3986404394,"offset":3,"prev":4294967295,"next":4294967295,"lsn":56778826281,"page_type":17855,"flush_lsn":0,"space_id":427},"filetrailer":{"checksum":3986404394,"lsn_low32":944251433},"region":{},"space":{"Pages":7},"page_number":3}
+2022/10/05 12:54:54.284 [I] [index.go:453]  min_record infimum.next==========================================>28
+
+2022/10/05 12:54:54.284 [I] [index.go:505]  record() get header=====>&{Offset:0 Length:5 Next:0 Prev:0 Record_Type: Heap_Number:2231 N_owned:2 Info_flags:2 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:54:54.284 [I] [index.go:521]  record() this_record_offset =========>28
+
+2022/10/05 12:54:54.284 [I] [index.go:472]  record_fields,key ==========<nil>
+
+2022/10/05 12:54:54.284 [I] [index.go:505]  record() get header=====>&{Offset:0 Length:5 Next:0 Prev:0 Record_Type:conventional Heap_Number:0 N_owned:0 Info_flags:0 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:54:54.284 [I] [index.go:521]  record() this_record_offset =========>0
+
+2022/10/05 12:54:54.284 [I] [index.go:472]  record_fields,key ==========<nil>
+
+2022/10/05 12:54:54.284 [I] [index.go:894]  supremum(),next=>0
+2022/10/05 12:54:54.284 [I] [index.go:437]  each_record_size is ========>2
+
+2022/10/05 12:56:01.237 [I] [index.go:248]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":3986404394,"offset":3,"prev":4294967295,"next":4294967295,"lsn":56778826281,"page_type":17855,"flush_lsn":0,"space_id":427},"filetrailer":{"checksum":3986404394,"lsn_low32":944251433},"region":{},"space":{"Pages":7},"page_number":3}
+2022/10/05 12:56:01.237 [I] [index.go:248]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":3986404394,"offset":3,"prev":4294967295,"next":4294967295,"lsn":56778826281,"page_type":17855,"flush_lsn":0,"space_id":427},"filetrailer":{"checksum":3986404394,"lsn_low32":944251433},"region":{},"space":{"Pages":7},"page_number":3}
+2022/10/05 12:56:01.238 [I] [index.go:453]  min_record infimum.next==========================================>28
+
+2022/10/05 12:56:01.238 [I] [index.go:505]  record() get header=====>&{Offset:28 Length:5 Next:0 Prev:0 Record_Type: Heap_Number:2231 N_owned:2 Info_flags:2 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:56:01.238 [I] [index.go:521]  record() this_record_offset =========>28
+
+2022/10/05 12:56:01.238 [I] [index.go:472]  record_fields,key ==========<nil>
+
+2022/10/05 12:56:01.238 [I] [index.go:505]  record() get header=====>&{Offset:0 Length:5 Next:0 Prev:0 Record_Type:conventional Heap_Number:0 N_owned:0 Info_flags:0 Offset_size:0 N_fields:0 Nulls:[] Lengths:map[] Externs:[]}
+
+2022/10/05 12:56:01.238 [I] [index.go:521]  record() this_record_offset =========>0
+
+2022/10/05 12:56:01.238 [I] [index.go:472]  record_fields,key ==========<nil>
+
+2022/10/05 12:56:01.238 [I] [index.go:894]  supremum(),next=>0
+2022/10/05 12:56:01.238 [I] [index.go:437]  each_record_size is ========>2
+

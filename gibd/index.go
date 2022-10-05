@@ -26,22 +26,23 @@ func NewFsegHeader() *FsegHeader {
 
 // record format https://blog.jcole.us/2013/01/10/the-physical-structure-of-records-in-innodb/
 type RecordHeader struct {
-	length      uint64
-	next        uint64
-	prev        uint64
-	record_type string
-	heap_number uint64
-	n_owned     uint64
-	info_flags  uint64
-	offset_size uint64
-	n_fields    uint64
-	nulls       []string
-	lengths     map[string]int
-	externs     []string
+	Offset      uint64         `json:"offset"`
+	Length      uint64         `json:"length"`
+	Next        uint64         `json:"next"`
+	Prev        uint64         `json:"prev"`
+	Record_Type string         `json:"type"`
+	Heap_Number uint64         `json:"heap_number"`
+	N_owned     uint64         `json:"n_owned"`
+	Info_flags  uint64         `json:"info_flags"`
+	Offset_size uint64         `json:"offset_size"`
+	N_fields    uint64         `json:"n_fields"`
+	Nulls       []string       `json:"nulls"`
+	Lengths     map[string]int `json:"lengths"`
+	Externs     []string       `json:"externs"`
 }
 
-func NewRecordHeader() *RecordHeader {
-	return &RecordHeader{}
+func NewRecordHeader(offset uint64) *RecordHeader {
+	return &RecordHeader{Offset: offset}
 
 }
 
@@ -140,13 +141,13 @@ type Index struct {
 	record_describer interface{}
 	root             *Page
 	size             uint64
-	Record_format    map[string]interface{} `json:"recordformat"`
+	Record_Format    map[string]interface{} `json:"recordformat"`
 }
 
 func NewIndex(page *Page) *Index {
 
 	index := &Index{Page: page}
-
+	index.Space = page.Space
 	index.Page_Header()
 	return index
 }
@@ -300,7 +301,7 @@ func (index *Index) Page_Header() {
 }
 
 func (index *Index) IsRoot() bool {
-	return index.recordHeader.prev == 0 && index.recordHeader.next == 0
+	return index.recordHeader.Prev == 0 && index.recordHeader.Next == 0
 }
 
 func (index *Index) IsLeaf() bool {
@@ -367,7 +368,7 @@ func (rc *RecordCursor) record() *Record {
 func (rc *RecordCursor) Next_Record() *Record {
 	// page_record_cursor_next_record = page_record_cursor_next_record + 1
 
-	rec := rc.Index.record(rc.Record.record.(*UserRecord).header.next)
+	rec := rc.Index.record(rc.Record.record.(*UserRecord).header.Next)
 
 	var next_record_offset uint64
 	var rc_record_offset uint64
@@ -379,7 +380,7 @@ func (rc *RecordCursor) Next_Record() *Record {
 
 		next_record_offset = rec.record.(*UserRecord).offset
 		next_record := rec.record.(*UserRecord)
-		if (next_record.header.next == supremum.record.(*SystemRecord).header.next) || next_record_offset == rc_record_offset {
+		if (next_record.header.Next == supremum.record.(*SystemRecord).header.Next) || next_record_offset == rc_record_offset {
 			return nil
 		} else {
 			return rec
@@ -387,7 +388,7 @@ func (rc *RecordCursor) Next_Record() *Record {
 	case *SystemRecord:
 		next_record_offset = rec.record.(*SystemRecord).offset
 		next_record := rec.record.(*SystemRecord)
-		if (next_record.header.next == supremum.record.(*SystemRecord).header.next) || next_record_offset == rc_record_offset {
+		if (next_record.header.Next == supremum.record.(*SystemRecord).header.Next) || next_record_offset == rc_record_offset {
 			return nil
 		} else {
 			return rec
@@ -468,19 +469,22 @@ func (index *Index) Max_Record() *Record {
 func (index *Index) Record_Fields() []*RecordField {
 	var res_arr []*RecordField
 
-	Log.Info("record_fields,key ==========%v\n", index.Record_format["key"])
-
-	key_arr := index.Record_format["key"].([]*RecordField)
+	Log.Info("record_fields,key ==========%v\n", index.Record_Format["key"])
+	//添加判断，如果没有record_format就是表示普通的表空间，普通表空间没有办法获取字段类型的
+	if index.Record_Format == nil {
+		return nil
+	}
+	key_arr := index.Record_Format["key"].([]*RecordField)
 	for i := 0; i < len(key_arr); i++ {
 		res_arr = append(res_arr, key_arr[i])
 	}
-	Log.Info("record_fields,sys ==========%v\n", index.Record_format["sys"])
-	sys_arr := index.Record_format["sys"].([]*RecordField)
+	Log.Info("record_fields,sys ==========%v\n", index.Record_Format["sys"])
+	sys_arr := index.Record_Format["sys"].([]*RecordField)
 	for i := 0; i < len(sys_arr); i++ {
 		res_arr = append(res_arr, sys_arr[i])
 	}
-	Log.Info("record_fields,row ==========%v\n", index.Record_format["row"])
-	row_arr := index.Record_format["row"].([]*RecordField)
+	Log.Info("record_fields,row ==========%v\n", index.Record_Format["row"])
+	row_arr := index.Record_Format["row"].([]*RecordField)
 	for i := 0; i < len(row_arr); i++ {
 		res_arr = append(res_arr, row_arr[i])
 	}
@@ -503,10 +507,10 @@ func (index *Index) record(offset uint64) *Record {
 	rec_len += header_len
 
 	var next uint64
-	if header.next == 0 {
+	if header.Next == 0 {
 		next = 0
 	} else {
-		next = header.next
+		next = header.Next
 	}
 	this_record := NewUserRecord(
 		index.PageHeader.Format,
@@ -517,96 +521,105 @@ func (index *Index) record(offset uint64) *Record {
 	Log.Info("record() this_record_offset =========>%+v\n", offset)
 	rf := index.Get_Record_Format()
 
-	index.Record_format = rf
-	if index.Record_format != nil {
+	index.Record_Format = rf
+	if index.Record_Format != nil {
 
 		this_record.record_type = rf["tab_type"].(string)
-	} else {
-		println("record() record_format is nil")
 	}
 	all_field := index.Record_Fields()
-	keys := []*FieldDescriptor{}
-	rows := []*FieldDescriptor{}
-	syss := []*FieldDescriptor{}
+	if all_field == nil {
+		return NewRecord(index.Page, this_record)
+	} else {
 
-	Log.Info("record() all_field=====>%+v\n", all_field)
-	Log.Info("record() record.header.lengths=====>%+v\n", this_record.header.lengths)
+		keys := []*FieldDescriptor{}
+		rows := []*FieldDescriptor{}
+		syss := []*FieldDescriptor{}
 
-	for i := 0; i < len(all_field); i++ {
-		f := all_field[i]
-		p := fmap[f.position]
-		//get value exception unkown data type===> &{ 0 false}
-		Log.Info("record() this_field_offset =========>%+v\n", offset)
-		filed_value, len := f.Value(offset, this_record, index)
-		Log.Info("record() recordfield name, datatype =====>%s, %s", f.name, f.data_type)
-		Log.Info("record() recordfield value =====>%s", filed_value)
-		offset = offset + len
-		var f_name string
-		switch f.data_type.(type) {
-		case *TransactionIdType:
-			f_name = f.data_type.(*TransactionIdType).name
-		case *IntegerType:
-			f_name = f.data_type.(*IntegerType).name
-		}
-		fieldDescriptor := NewFieldDescriptor(f.name, f_name, filed_value, f.extern(int64(offset), index, this_record))
-		switch p {
-		case "key":
-			keys = append(keys, fieldDescriptor)
-		case "row":
-			rows = append(rows, fieldDescriptor)
-		case "sys":
-			syss = append(syss, fieldDescriptor)
-		}
+		Log.Info("record() record.header.lengths=====>%+v\n", this_record.header.Lengths)
 
-	}
-	this_record.key = keys
-	this_record.row = rows
-	this_record.sys = syss
-
-	if index.IsLeaf() == false {
-		this_record.child_page_number = uint64(index.Page.BufferReadAt(int64(offset), 4))
-		offset = offset + 4
-		rec_len += 4
-	}
-
-	this_record.length = rec_len
-
-	for i := 0; i < len(this_record.sys); i++ {
-		switch this_record.sys[i].name {
-		case "DB_TRX_ID":
-			// if len(this_record.sys[i].value.(uint64)) == 0 {
-			// 	this_record.transaction_id = 0
-			// } else {
-			// 	this_record.transaction_id = uint64(this_record.sys[i].value.([]uint8)[0])
-			// }
-			this_record.transaction_id = this_record.sys[i].value.(uint64)
-			Log.Info("record this record's transaction_id is =======> %+v\n", this_record.transaction_id)
-		case "DB_ROLL_PTR":
-			// if len(this_record.sys[i].value.([]uint8)) == 0 {
-			// 	this_record.roll_pointer = 0
-			// } else {
-			// 	this_record.roll_pointer = uint64(this_record.sys[i].value.([]uint8)[0])
-			// }
-			this_record.roll_pointer = this_record.sys[i].value.(*Pointer)
+		for i := 0; i < len(all_field); i++ {
+			f := all_field[i]
+			p := fmap[f.position]
+			//get value exception unkown data type===> &{ 0 false}
+			Log.Info("record() this_field_offset =========>%+v\n", offset)
+			filed_value, len := f.Value(offset, this_record, index)
+			Log.Info("record() recordfield name, datatype =====>%s, %s", f.name, f.data_type)
+			Log.Info("record() recordfield value =====>%s", filed_value)
+			offset = offset + len
+			var f_name string
+			switch f.data_type.(type) {
+			case *TransactionIdType:
+				f_name = f.data_type.(*TransactionIdType).name
+			case *IntegerType:
+				f_name = f.data_type.(*IntegerType).name
+			}
+			fieldDescriptor := NewFieldDescriptor(f.name, f_name, filed_value, f.extern(int64(offset), index, this_record))
+			switch p {
+			case "key":
+				keys = append(keys, fieldDescriptor)
+			case "row":
+				rows = append(rows, fieldDescriptor)
+			case "sys":
+				syss = append(syss, fieldDescriptor)
+			}
 
 		}
+		this_record.key = keys
+		this_record.row = rows
+		this_record.sys = syss
 
+		if index.IsLeaf() == false {
+			this_record.child_page_number = uint64(index.Page.BufferReadAt(int64(offset), 4))
+			offset = offset + 4
+			rec_len += 4
+		}
+
+		this_record.length = rec_len
+
+		for i := 0; i < len(this_record.sys); i++ {
+			switch this_record.sys[i].name {
+			case "DB_TRX_ID":
+				// if len(this_record.sys[i].value.(uint64)) == 0 {
+				// 	this_record.transaction_id = 0
+				// } else {
+				// 	this_record.transaction_id = uint64(this_record.sys[i].value.([]uint8)[0])
+				// }
+				this_record.transaction_id = this_record.sys[i].value.(uint64)
+				Log.Info("record this record's transaction_id is =======> %+v\n", this_record.transaction_id)
+			case "DB_ROLL_PTR":
+				// if len(this_record.sys[i].value.([]uint8)) == 0 {
+				// 	this_record.roll_pointer = 0
+				// } else {
+				// 	this_record.roll_pointer = uint64(this_record.sys[i].value.([]uint8)[0])
+				// }
+				this_record.roll_pointer = this_record.sys[i].value.(*Pointer)
+
+			}
+
+		}
 	}
 	return NewRecord(index.Page, this_record)
 }
 
 func (index *Index) Get_Record_Format() map[string]interface{} {
-	if index.record_describer == nil {
-		println("get_record_format record_describer is nil")
-	}
+	// if index.record_describer == nil {
+	// 	println("get_record_format record_describer is nil")
+	// }
 
-	if index.record_describer != nil {
-		if index.Record_format != nil {
-			return index.Record_format
-		} else {
-			record_format := index.Make_Record_Description()
-			return record_format
-		}
+	// if index.record_describer != nil {
+	// 	if index.Record_format != nil {
+	// 		return index.Record_format
+	// 	} else {
+	// 		record_format := index.Make_Record_Description()
+	// 		return record_format
+	// 	}
+	// }
+
+	if index.Record_Format != nil {
+		return index.Record_Format
+	} else {
+		record_format := index.Make_Record_Description()
+		return record_format
 	}
 	return nil
 }
@@ -616,6 +629,7 @@ func (index *Index) Get_Record_Describer() interface{} {
 		return index.record_describer
 	} else {
 		record_describer := index.Make_Record_Describer()
+		index.record_describer = record_describer
 		return record_describer
 	}
 	return nil
@@ -689,7 +703,8 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 
 	var ruby_description map[string]interface{}
 	//需要在这里把description格式调整成ruby的格式，统一下后续好处理
-	switch value := description.(type) {
+
+	switch description.(type) {
 	case *SysTablesPrimary:
 
 		description := description.(*SysTablesPrimary)
@@ -845,7 +860,8 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		return ruby_description
 
 	default:
-		fmt.Println("description is of a different type%T", value)
+		//  fmt.Println("description is of a different type%T", value)
+		fmt.Printf("\n")
 	}
 
 	return ruby_description
@@ -875,7 +891,7 @@ func (index *Index) Infimum() *Record {
 
 func (index *Index) Supremum() *Record {
 	supremum := index.System_Record(index.Pos_Supremum())
-	Log.Info("supremum(),next=>%d", supremum.record.(*SystemRecord).header.next)
+	Log.Info("supremum(),next=>%d", supremum.record.(*SystemRecord).header.Next)
 	return supremum
 }
 
@@ -883,75 +899,71 @@ func (index *Index) System_Record(offset uint64) *Record {
 	header, _ := index.Record_Header(offset)
 	index.recordHeader = header
 	data := index.Page.ReadBytes(int64(offset), int64(index.Size_Mum_Record()))
-	systemrecord := NewSystemRecord(offset, header, header.next, data, 0)
+	systemrecord := NewSystemRecord(offset, header, header.Next, data, 0)
 	record := NewRecord(index.Page, systemrecord)
 	return record
 }
 
 func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 
-	header := NewRecordHeader()
+	header := NewRecordHeader(offset)
+
 	var header_len uint64
 	switch index.PageHeader.Format {
 	case "compact":
 
-		header.next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
+		header.Next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
 		bits1 := uint64(index.Page.BufferReadAt(int64(offset)-4, 2))
-		header.record_type = RECORD_TYPES[bits1&0x07]
-		header.heap_number = (bits1 & 0xfff8) >> 3
+		header.Record_Type = RECORD_TYPES[bits1&0x07]
+		header.Heap_Number = (bits1 & 0xfff8) >> 3
 
-		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-5, 1))
-		header.n_owned = bits2 & 0x0f
-		header.info_flags = (bits2 & 0xf0) >> 4
+		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-6, 1))
+		header.N_owned = bits2 & 0x0f
+		header.Info_flags = (bits2 & 0xf0) >> 4
 		index.Record_Header_Compact_Additional(header, offset)
 		header_len = 2 + 2 + 1 + 0 //0 代表record_header_compact_additional中处理记录，先不看
 
 	case "redundant":
-		header.next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
-		//bytes := index.Page.readbytes(int64(offset)-2, 2)
-		bits1 := uint64(index.Page.BufferReadAt(int64(offset)-5, 3))
-		if (bits1 & 1) == 0 {
-			header.offset_size = 2
-		} else {
-			header.offset_size = 1
-		}
+		// header.next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
+		// //bytes := index.Page.readbytes(int64(offset)-2, 2)
+		// bits1 := uint64(index.Page.BufferReadAt(int64(offset)-5, 3))
+		// if (bits1 & 1) == 0 {
+		// 	header.offset_size = 2
+		// } else {
+		// 	header.offset_size = 1
+		// }
 
-		header.n_fields = (bits1 & (((1 << 10) - 1) << 1)) >> 1
-		header.heap_number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
+		// header.n_fields = (bits1 & (((1 << 10) - 1) << 1)) >> 1
+		// header.heap_number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
 
-		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-6, 1))
-		offset = offset - 6
-		header.n_owned = bits2 & 0x0f
-		header.info_flags = (bits2 & 0xf0) >> 4
-		//header.heap_number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
+		// bits2 := uint64(index.Page.BufferReadAt(int64(offset)-6, 1))
+		// offset = offset - 6
+		// header.n_owned = bits2 & 0x0f
+		// header.info_flags = (bits2 & 0xf0) >> 4
+		// //header.heap_number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
 
-		index.Record_Header_Redundant_Additional(header, offset)
-		header_len = 2 + 3 + 1 + 0 //0 代表record_header_redundant_additional中处理记录，先不看
-		header.length = header_len
-		// Log.Info("header的值是========》%+v\n", header)
-		// Log.Info("header lengths 的值是========》%+v\n", header.lengths)
-		// Log.Info("header nulls 的值是========》%+v\n", header.nulls)
-		// Log.Info("header externs 的值是========》%+v\n", header.externs)
-		//println("lengths:%v", header.lengths, "nulls:%v", header.nulls, "externs:%v", header.externs)
-		//println("offset_size:", header.offset_size, "n_fields:", header.n_fields, "heap_number:", header.heap_number, "n_owned:", header.n_owned, "info_flags:", header.info_flags, "next:", header.next)
+		// index.Record_Header_Redundant_Additional(header, offset)
+		// header_len = 2 + 3 + 1 + 0 //0 代表record_header_redundant_additional中处理记录，先不看
+		// header.length = header_len
+
 	}
 
-	header.length = header_len
+	header.Length = header_len
 
 	data, _ := json.Marshal(header)
 	outStr := pretty.Pretty(data)
 
-	fmt.Printf("record header: \n%s\n", outStr)
+	fmt.Printf("record header: %s\n", outStr)
 
 	return header, header_len
 }
 
 func (index *Index) Record_Header_Compact_Additional(header *RecordHeader, offset uint64) {
-	switch header.record_type {
+	switch header.Record_Type {
 	case "conventional", "node_pointer":
-		if index.Record_format != nil {
-			header.nulls = index.Record_Header_Compact_Null_Bitmap(offset)
-			header.lengths, header.externs = index.Record_Header_Compact_Variable_Lengths_And_Externs(offset, header.nulls)
+		if index.Record_Format != nil {
+			header.Nulls = index.Record_Header_Compact_Null_Bitmap(offset)
+			header.Lengths, header.Externs = index.Record_Header_Compact_Variable_Lengths_And_Externs(offset, header.Nulls)
 		}
 	}
 
@@ -973,13 +985,13 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 	nulls := []bool{}
 	externs := []bool{}
 	field_offsets := index.Record_Header_Redundant_Field_End_Offsets(header, offset)
-	Log.Info("record_header_redundant_additional的 header.heap number 内容是==================>%v\n", header.heap_number)
+	Log.Info("record_header_redundant_additional的 header.heap number 内容是==================>%v\n", header.Heap_Number)
 	Log.Info("record_header_redundant_additional的 field_offsets 内容是==================>%v\n", field_offsets)
 	this_field_offset := 0
 	// var next_field_offset int
 	for i := 0; i < len(field_offsets); i++ {
 
-		switch header.offset_size {
+		switch header.Offset_size {
 		case 1:
 			next_field_offset := (field_offsets[i] & RECORD_REDUNDANT_OFF1_OFFSET_MASK)
 			Log.Info("record_header_redundant_additional的 RECORD_REDUNDANT_OFF1_OFFSET_MASK 内容是==================>%+v\n", RECORD_REDUNDANT_OFF1_OFFSET_MASK)
@@ -1003,37 +1015,37 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 	Log.Info("record_header_redundant_additional的 lengths 内容是==================>%v\n", lengths)
 	Log.Info("record_header_redundant_additional的 nulls 内容是==================>%v\n", nulls)
 	Log.Info("record_header_redundant_additional的 externs 内容是==================>%v\n", externs)
-	Log.Info("record_header_redundant_additional的 record_format 内容是==================>%v\n", index.Record_format)
+	Log.Info("record_header_redundant_additional的 record_format 内容是==================>%v\n", index.Record_Format)
 	Log.Info("record_header_redundant_additional的 record_describer 内容是==================>%v\n", index.record_describer)
 
-	index.Record_format = index.Get_Record_Format()
-	if index.Record_format != nil {
-		header.lengths = make(map[string]int)
-		header.nulls = []string{}
-		header.externs = []string{}
+	index.Record_Format = index.Get_Record_Format()
+	if index.Record_Format != nil {
+		header.Lengths = make(map[string]int)
+		header.Nulls = []string{}
+		header.Externs = []string{}
 		all_fields := index.Record_Fields()
 		Log.Info("record_header_redundant_additional的 all_fields 内容是==================>%v\n", len(all_fields))
 		Log.Info("record_header_redundant_additional的 field_offset 长度是==================>%v\n", len(field_offsets))
 		for i := 0; i < len(all_fields); i++ {
 			f := all_fields[i]
 			if f.position >= len(lengths) {
-				header.lengths[f.name] = -1
+				header.Lengths[f.name] = -1
 			} else {
-				header.lengths[f.name] = lengths[f.position]
+				header.Lengths[f.name] = lengths[f.position]
 			}
 
 			if f.position >= len(nulls) {
-				header.nulls = append(header.nulls, "")
+				header.Nulls = append(header.Nulls, "")
 			} else {
 				if nulls[f.position] {
-					header.nulls = append(header.nulls, f.name)
+					header.Nulls = append(header.Nulls, f.name)
 				}
 			}
 			if f.position >= len(externs) {
-				header.externs = append(header.externs, "")
+				header.Externs = append(header.Externs, "")
 			} else {
 				if externs[f.position] {
-					header.externs = append(header.externs, f.name)
+					header.Externs = append(header.Externs, f.name)
 				}
 			}
 
@@ -1046,21 +1058,21 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 		// header.nulls = nulls
 		// header.externs = externs
 	}
-	Log.Info("record_header_redundant_additional的 header.lengths 内容是==================>%v\n", header.lengths)
-	Log.Info("record_header_redundant_additional的 header.nulls 内容是==================>%v\n", header.nulls)
-	Log.Info("record_header_redundant_additional的 header.externs 内容是==================>%v\n", header.externs)
+	Log.Info("record_header_redundant_additional的 header.lengths 内容是==================>%v\n", header.Lengths)
+	Log.Info("record_header_redundant_additional的 header.nulls 内容是==================>%v\n", header.Nulls)
+	Log.Info("record_header_redundant_additional的 header.externs 内容是==================>%v\n", header.Externs)
 
 }
 
 func (index *Index) Record_Header_Redundant_Field_End_Offsets(header *RecordHeader, offset uint64) []int {
 	field_offsets := []int{}
 	Log.Info("record_header_redundant_field_end_offsets offset 内容是==================>%v\n", offset)
-	for i := 0; i < int(header.n_fields); i++ {
-		field_offsets = append(field_offsets, index.Page.BufferReadAt(int64(offset)-1, int64(header.offset_size)))
+	for i := 0; i < int(header.N_fields); i++ {
+		field_offsets = append(field_offsets, index.Page.BufferReadAt(int64(offset)-1, int64(header.Offset_size)))
 		Log.Info("record_header_redundant_field_end_offsets page number 是==================>%v\n", index.Page.Page_number)
 
 		Log.Info("record_header_redundant_field_end_offsets field_offsets 内容是==================>%v\n", field_offsets)
-		offset = offset - header.offset_size
+		offset = offset - header.Offset_size
 	}
 	return field_offsets
 }
