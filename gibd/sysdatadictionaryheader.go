@@ -1,6 +1,11 @@
 package gibd
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/tidwall/pretty"
+)
 
 type SYS_TABLES struct {
 	PRIMARY uint64 `json:"primary"`
@@ -43,7 +48,9 @@ func (dh *SysDataDictionaryHeader) Dump() {
 	println("data_dictionary header:")
 	dh.Data_Dictionary_Header()
 	data, _ := json.Marshal(dh)
-	println(string(data))
+	outStr := pretty.Pretty(data)
+	fmt.Printf("%s\n", outStr)
+
 }
 
 func (dh *SysDataDictionaryHeader) Pos_Data_Dictionary_Header() uint64 {

@@ -4,14 +4,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+
+	"github.com/tidwall/pretty"
 )
 
 // https://blog.jcole.us/2013/01/07/the-physical-structure-of-innodb-index-pages/
+//分叶子和非叶子段
 type FsegHeader struct {
-	leaf     uint64
-	internal uint64
+	LpiSpaceId      uint64 `json:"leafpagesinodespaceid"`
+	LpiPageNumber   uint64 `json:"leafpagesinodepagenumber"`
+	Lpioffset       uint64 `json:"leafpagesinodeoffset"`
+	InodeSpaceId    uint64 `json:"nonleafinodespaceid"`
+	InodePageNumber uint64 `json:"nonleafinodepagenumber"`
+	InodeOffset     uint64 `json:"nonleafinodepageoffset"`
 }
 
+func NewFsegHeader() *FsegHeader {
+	return &FsegHeader{}
+
+}
+
+// record format https://blog.jcole.us/2013/01/10/the-physical-structure-of-records-in-innodb/
 type RecordHeader struct {
 	length      uint64
 	next        uint64
@@ -95,20 +108,20 @@ func NewFieldDescriptor(name string, field_type string, value interface{}, exter
 }
 
 type PageHeader struct {
-	n_dir_slots        uint64
-	heap_top           uint64
-	n_heap_format      uint64
-	n_heap             uint64
-	format             string
-	garbage_offset     uint64
-	garbage_size       uint64
-	last_insert_offset uint64
-	direction          uint64
-	n_direction        uint64
-	n_recs             uint64
-	max_trx_id         uint64
-	level              uint64
-	index_id           uint64
+	N_dir_slots        uint64 `json:"n_dir_slots"`
+	Heap_top           uint64 `json:"heap_top"`
+	N_heap_format      uint64 `json:"n_heap_format"`
+	N_heap             uint64 `json:"n_heap"`
+	Format             string `json:"format"`
+	Garbage_offset     uint64 `json:"garbage_offset"`
+	Garbage_size       uint64 `json:"garbage_size"`
+	Last_insert_offset uint64 `json:"last_insert_offset"`
+	Direction          uint64 `json:"direction"`
+	N_direction        uint64 `json:"n_direction"`
+	N_recs             uint64 `json:"n_recs"`
+	Max_trx_id         uint64 `json:"max_trx_id"`
+	Level              uint64 `json:"level"`
+	Index_id           uint64 `json:"index_id"`
 }
 
 // The basic structure of an INDEX page is: FIL header, INDEX header, FSEG
@@ -118,16 +131,16 @@ type PageHeader struct {
 type Index struct {
 	Page             *Page
 	recordHeader     *RecordHeader
-	systemRecord     SystemRecord
-	userRecord       UserRecord
+	SystemRecords    []SystemRecord `json:"systemrecords"`
+	UserRecords      []UserRecord   `json:"userrecords"`
 	fileDesc         FieldDescriptor
-	fsegHeader       FsegHeader
-	pageHeader       PageHeader
-	space            *Space
+	FsegHeader       FsegHeader `json:"fsegheader"`
+	PageHeader       PageHeader `json:"pageheader"`
+	Space            *Space
 	record_describer interface{}
 	root             *Page
 	size             uint64
-	record_format    map[string]interface{}
+	Record_format    map[string]interface{} `json:"recordformat"`
 }
 
 func NewIndex(page *Page) *Index {
@@ -153,7 +166,7 @@ func (index *Index) Size_Fseg_Header() uint64 {
 }
 
 func (index *Index) Size_Record_Header() uint64 {
-	switch index.pageHeader.format {
+	switch index.PageHeader.Format {
 	case "compact":
 		return RECORD_NEXT_SIZE + RECORD_COMPACT_BITS_SIZE
 	case "redundant":
@@ -164,7 +177,7 @@ func (index *Index) Size_Record_Header() uint64 {
 
 func (index *Index) Size_Mum_Record_Header_Additional() uint64 {
 
-	switch index.pageHeader.format {
+	switch index.PageHeader.Format {
 	case "compact":
 		return 0
 	case "redundant":
@@ -201,7 +214,7 @@ func (index *Index) Header_Space() uint64 {
 }
 
 func (index *Index) Directory_Slots() uint64 {
-	return index.pageHeader.n_dir_slots
+	return index.PageHeader.N_dir_slots
 }
 func (index *Index) Directory_Space() uint64 {
 	return index.Directory_Slots() * PAGE_DIR_SLOT_SIZE
@@ -212,7 +225,7 @@ func (index *Index) Trailer_Space() uint64 {
 }
 
 func (index *Index) Free_Space() uint64 {
-	return index.pageHeader.garbage_size + (index.size - index.Page.Size_Fil_Trailer() - index.Directory_Space() - index.pageHeader.heap_top)
+	return index.PageHeader.Garbage_size + (index.size - index.Page.Size_Fil_Trailer() - index.Directory_Space() - index.PageHeader.Heap_top)
 }
 
 func (index *Index) Used_Space() uint64 {
@@ -223,8 +236,8 @@ func (index *Index) Record_Space() uint64 {
 }
 
 func (index *Index) Space_Per_Record() uint64 {
-	if index.pageHeader.n_recs > 0 {
-		return index.Record_Space() / index.pageHeader.n_recs
+	if index.PageHeader.N_recs > 0 {
+		return index.Record_Space() / index.PageHeader.N_recs
 	} else {
 		return 0
 	}
@@ -246,18 +259,44 @@ func (index *Index) Page_Header() {
 	level := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+26, 2))
 	index_id := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+28, 8))
 
-	page_header := PageHeader{n_dir_slots: n_dir_slots, heap_top: heap_top, n_heap_format: n_heap_format,
-		garbage_offset: garbage_offset, garbage_size: garbage_size, last_insert_offset: last_insert_offset,
-		direction: direction, n_direction: n_direction, n_recs: n_recs, max_trx_id: max_trx_id, level: level, index_id: index_id}
+	page_header := PageHeader{N_dir_slots: n_dir_slots, Heap_top: heap_top, N_heap_format: n_heap_format,
+		Garbage_offset: garbage_offset, Garbage_size: garbage_size, Last_insert_offset: last_insert_offset,
+		Direction: direction, N_direction: n_direction, N_recs: n_recs, Max_trx_id: max_trx_id, Level: level, Index_id: index_id}
 
-	index.pageHeader = page_header
-	index.pageHeader.n_heap = index.pageHeader.n_heap_format & (2<<14 - 1)
+	index.PageHeader = page_header
+	index.PageHeader.N_heap = index.PageHeader.N_heap_format & (2<<14 - 1)
 
-	if (index.pageHeader.n_heap_format & (1 << 15)) == 0 {
-		index.pageHeader.format = "redundant"
+	if (index.PageHeader.N_heap_format & (1 << 15)) == 0 {
+		index.PageHeader.Format = "redundant"
 	} else {
-		index.pageHeader.format = "compact"
+		index.PageHeader.Format = "compact"
 	}
+
+	//get fseg header,put them together,index的叶子和非叶子节点使用的是2个segment管理
+	pos := int64(74)
+	inodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4))
+	pos = pos + 4
+	inodePageNumer := uint64(index.Page.BufferReadAt(pos, 4))
+	pos = pos + 4
+	inodeOffset := uint64(index.Page.BufferReadAt(pos, 2))
+	pos = pos + 2
+	nonLeafInodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4))
+	pos = pos + 4
+	nonLeafInodePageNumber := uint64(index.Page.BufferReadAt(pos, 4))
+	pos = pos + 4
+	nonLeafInodeOffset := uint64(index.Page.BufferReadAt(pos, 2))
+	pos = pos + 2
+
+	fsegHeader := NewFsegHeader()
+	fsegHeader.LpiSpaceId = inodeSpaceId
+	fsegHeader.LpiPageNumber = inodePageNumer
+	fsegHeader.Lpioffset = inodeOffset
+
+	fsegHeader.InodeSpaceId = nonLeafInodeSpaceId
+	fsegHeader.InodePageNumber = nonLeafInodePageNumber
+	fsegHeader.InodeOffset = nonLeafInodeOffset
+
+	index.FsegHeader = *fsegHeader
 }
 
 func (index *Index) IsRoot() bool {
@@ -266,7 +305,7 @@ func (index *Index) IsRoot() bool {
 
 func (index *Index) IsLeaf() bool {
 
-	if index.pageHeader.level == 0 {
+	if index.PageHeader.Level == 0 {
 		return true
 	} else {
 		return false
@@ -274,7 +313,7 @@ func (index *Index) IsLeaf() bool {
 }
 
 func (index *Index) page(page_number uint64) *Page {
-	page := index.space.Page(page_number)
+	page := index.Space.Page(page_number)
 	page.record_describer = index.record_describer
 	return page
 }
@@ -292,7 +331,6 @@ const max = 4294967295
 func (rc *RecordCursor) Initial_Record(offset uint64) *Record {
 	switch offset {
 	case min:
-		Log.Info("into initial_record\n")
 		return rc.Index.Min_Record()
 	case max:
 		return rc.Index.Max_Record()
@@ -324,17 +362,12 @@ func (rc *RecordCursor) record() *Record {
 	return nil
 }
 
-var page_record_cursor_next_record int
+// var page_record_cursor_next_record int
 
 func (rc *RecordCursor) Next_Record() *Record {
-	page_record_cursor_next_record = page_record_cursor_next_record + 1
-	// Log.Info("next_record1111 this record's offset is========>%+v\n", rc.Record.record.(*UserRecord).offset)
-	// Log.Info("next_record_next_record_header_next is========>%+v\n", rc.Record.record.(*UserRecord).header.next)
+	// page_record_cursor_next_record = page_record_cursor_next_record + 1
 
 	rec := rc.Index.record(rc.Record.record.(*UserRecord).header.next)
-	// Log.Info("next_record_next_record is========>%+v\n", rec)
-	// Log.Info("next_record_next_record_offset is========>%+v\n", rec.record.(*UserRecord).offset)
-	// Log.Info("next_record_next_record's_next is========>%+v\n", rec.record.(*UserRecord).header.next)
 
 	var next_record_offset uint64
 	var rc_record_offset uint64
@@ -392,32 +425,21 @@ func (index *Index) Record_Cursor(offset uint64, direction string) *RecordCursor
 }
 func (index *Index) each_record() []*Record {
 	var records []*Record
+
 	rc := index.Record_Cursor(min, "forward")
-	// Log.Info("index each_record,========>%+v\n", rc.Record)
-	//Log.Info("index each_record header next,========>%+v\n", rc.Record.record.(*UserRecord).header.next)
 	r := rc.record()
-	// Log.Info("index_each_record()rows1 ========>%+v\n", r.record.(*UserRecord).row)
-	// for i := 0; i < len(r.record.(*UserRecord).row); i++ {
-	// 	Log.Info("index_each_record()row1========>%+v\n", r.record.(*UserRecord).row[i])
-	// }
 	records = append(records, r)
+
 	for ; r != nil; rc.Record, r = r, rc.record() {
-
-		// Log.Info("index_each_record()rows ========>%+v\n", r.record.(*UserRecord).row)
-		// for i := 0; i < len(r.record.(*UserRecord).row); i++ {
-		// 	Log.Info("index_each_record()row ========>%+v\n", r.record.(*UserRecord).row[i])
-		// }
-
 		records = append(records, r)
 	}
-
 	Log.Info("each_record_size is ========>%+v\n", len(records))
 
 	return records
 
 }
 
-//Return the minimum record on this page.
+//Return the minimum record on this page.不是Infimum,是用户的最小值
 func (index *Index) Min_Record() *Record {
 
 	infimum := index.Infimum()
@@ -446,19 +468,19 @@ func (index *Index) Max_Record() *Record {
 func (index *Index) Record_Fields() []*RecordField {
 	var res_arr []*RecordField
 
-	Log.Info("record_fields,key ==========%v\n", index.record_format["key"])
+	Log.Info("record_fields,key ==========%v\n", index.Record_format["key"])
 
-	key_arr := index.record_format["key"].([]*RecordField)
+	key_arr := index.Record_format["key"].([]*RecordField)
 	for i := 0; i < len(key_arr); i++ {
 		res_arr = append(res_arr, key_arr[i])
 	}
-	Log.Info("record_fields,sys ==========%v\n", index.record_format["sys"])
-	sys_arr := index.record_format["sys"].([]*RecordField)
+	Log.Info("record_fields,sys ==========%v\n", index.Record_format["sys"])
+	sys_arr := index.Record_format["sys"].([]*RecordField)
 	for i := 0; i < len(sys_arr); i++ {
 		res_arr = append(res_arr, sys_arr[i])
 	}
-	Log.Info("record_fields,row ==========%v\n", index.record_format["row"])
-	row_arr := index.record_format["row"].([]*RecordField)
+	Log.Info("record_fields,row ==========%v\n", index.Record_format["row"])
+	row_arr := index.Record_format["row"].([]*RecordField)
 	for i := 0; i < len(row_arr); i++ {
 		res_arr = append(res_arr, row_arr[i])
 	}
@@ -487,7 +509,7 @@ func (index *Index) record(offset uint64) *Record {
 		next = header.next
 	}
 	this_record := NewUserRecord(
-		index.pageHeader.format,
+		index.PageHeader.Format,
 		offset,
 		header,
 		next,
@@ -495,8 +517,8 @@ func (index *Index) record(offset uint64) *Record {
 	Log.Info("record() this_record_offset =========>%+v\n", offset)
 	rf := index.Get_Record_Format()
 
-	index.record_format = rf
-	if index.record_format != nil {
+	index.Record_format = rf
+	if index.Record_format != nil {
 
 		this_record.record_type = rf["tab_type"].(string)
 	} else {
@@ -579,8 +601,8 @@ func (index *Index) Get_Record_Format() map[string]interface{} {
 	}
 
 	if index.record_describer != nil {
-		if index.record_format != nil {
-			return index.record_format
+		if index.Record_format != nil {
+			return index.Record_format
 		} else {
 			record_format := index.Make_Record_Description()
 			return record_format
@@ -830,8 +852,8 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 }
 
 func (index *Index) Make_Record_Describer() interface{} {
-	if (index.Page.Space != nil) && (index.Page.Space.innodb_system != nil) && index.pageHeader.index_id != 0 {
-		record_describer := index.Page.Space.innodb_system.data_dictionary.Record_Describer_By_Index_Id(index.pageHeader.index_id)
+	if (index.Page.Space != nil) && (index.Page.Space.innodb_system != nil) && index.PageHeader.Index_id != 0 {
+		record_describer := index.Page.Space.innodb_system.data_dictionary.Record_Describer_By_Index_Id(index.PageHeader.Index_id)
 		return record_describer
 	} else if index.Page.Space != nil {
 		record_describer := index.Page.Space.record_describer
@@ -870,7 +892,7 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 
 	header := NewRecordHeader()
 	var header_len uint64
-	switch index.pageHeader.format {
+	switch index.PageHeader.Format {
 	case "compact":
 
 		header.next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
@@ -906,22 +928,28 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 		index.Record_Header_Redundant_Additional(header, offset)
 		header_len = 2 + 3 + 1 + 0 //0 代表record_header_redundant_additional中处理记录，先不看
 		header.length = header_len
-		Log.Info("header的值是========》%+v\n", header)
-		Log.Info("header lengths 的值是========》%+v\n", header.lengths)
-		Log.Info("header nulls 的值是========》%+v\n", header.nulls)
-		Log.Info("header externs 的值是========》%+v\n", header.externs)
+		// Log.Info("header的值是========》%+v\n", header)
+		// Log.Info("header lengths 的值是========》%+v\n", header.lengths)
+		// Log.Info("header nulls 的值是========》%+v\n", header.nulls)
+		// Log.Info("header externs 的值是========》%+v\n", header.externs)
 		//println("lengths:%v", header.lengths, "nulls:%v", header.nulls, "externs:%v", header.externs)
 		//println("offset_size:", header.offset_size, "n_fields:", header.n_fields, "heap_number:", header.heap_number, "n_owned:", header.n_owned, "info_flags:", header.info_flags, "next:", header.next)
 	}
 
 	header.length = header_len
+
+	data, _ := json.Marshal(header)
+	outStr := pretty.Pretty(data)
+
+	fmt.Printf("record header: \n%s\n", outStr)
+
 	return header, header_len
 }
 
 func (index *Index) Record_Header_Compact_Additional(header *RecordHeader, offset uint64) {
 	switch header.record_type {
 	case "conventional", "node_pointer":
-		if index.record_format != nil {
+		if index.Record_format != nil {
 			header.nulls = index.Record_Header_Compact_Null_Bitmap(offset)
 			header.lengths, header.externs = index.Record_Header_Compact_Variable_Lengths_And_Externs(offset, header.nulls)
 		}
@@ -975,11 +1003,11 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 	Log.Info("record_header_redundant_additional的 lengths 内容是==================>%v\n", lengths)
 	Log.Info("record_header_redundant_additional的 nulls 内容是==================>%v\n", nulls)
 	Log.Info("record_header_redundant_additional的 externs 内容是==================>%v\n", externs)
-	Log.Info("record_header_redundant_additional的 record_format 内容是==================>%v\n", index.record_format)
+	Log.Info("record_header_redundant_additional的 record_format 内容是==================>%v\n", index.Record_format)
 	Log.Info("record_header_redundant_additional的 record_describer 内容是==================>%v\n", index.record_describer)
 
-	index.record_format = index.Get_Record_Format()
-	if index.record_format != nil {
+	index.Record_format = index.Get_Record_Format()
+	if index.Record_format != nil {
 		header.lengths = make(map[string]int)
 		header.nulls = []string{}
 		header.externs = []string{}
@@ -1035,4 +1063,12 @@ func (index *Index) Record_Header_Redundant_Field_End_Offsets(header *RecordHead
 		offset = offset - header.offset_size
 	}
 	return field_offsets
+}
+
+func (f *Index) Dump() {
+	println("Index dump:")
+
+	data, _ := json.Marshal(f)
+	outStr := pretty.Pretty(data)
+	fmt.Printf("%s\n", outStr)
 }

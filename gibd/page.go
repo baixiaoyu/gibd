@@ -105,7 +105,7 @@ type Page struct {
 	Buffer           *[]byte    `json:"-"`
 	Page_number      uint64     `json:"page_number"`
 	record_describer interface{}
-	Fsphdxdes        FspHdrXdes `json:"fsphdxdes"` // 这个只是在表空间的第一个页上有
+	// Fsphdxdes        FspHdrXdes `json:"fsphdxdes"` // 这个只是在表空间的第一个页上有
 }
 
 func NewPage(space *Space, buffer *[]byte, page_number uint64) *Page {
@@ -137,9 +137,10 @@ func (p *Page) Page_Dump() {
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_TYPE_FSP_HDR {
 		fmt.Println("fsp header:")
-		fsphdxdes := NewFspHdrXdes()
-		p.Fsphdxdes = fsphdxdes
-		p.Fsphdxdes.Fsp_Header(p)
+		fsphdxdes := NewFspHdrXdes(p)
+		fsphdxdes.Fsp_Header()
+		fsphdxdes.Dump()
+		// p.Fsphdxdes.Fsp_Header(p)
 		// TODO
 		// fspPage := FspPage(p)
 		// fspPage.Dump()
@@ -154,7 +155,10 @@ func (p *Page) Page_Dump() {
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_INDEX {
 		// TODO
-
+		indexPage := NewIndex(p)
+		indexPage.Page_Header()
+		indexPage.Dump()
+		indexPage.each_record()
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_TYPE_ALLOCATED {
 		// do nothing

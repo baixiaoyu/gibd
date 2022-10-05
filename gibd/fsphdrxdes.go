@@ -1,7 +1,11 @@
 package gibd
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
+
+	"github.com/tidwall/pretty"
 )
 
 type Flags struct {
@@ -52,13 +56,13 @@ type FspHeader struct {
 	Free_inodes      uint64   `json:"free_inodes"` // base node for free_inodes list
 }
 type Xdes struct {
-	F_seg_id  uint64 `json:"F_seg_id"`
+	F_seg_id  uint64 `json:"f_seg_id"`
 	Xdes_List Node   `json:"xdes_list"`
 	State     uint64 `json:"state"`
-	Bitmap    []byte
+	Bitmap    []byte `json:"bitmap"`
 }
 type FspHdrXdes struct {
-	// Page      *Page
+	Page *Page
 	// Flags     Flags
 	FspHeader FspHeader `json:"fspheader"`
 	Xdes      [256]Xdes
@@ -67,9 +71,9 @@ type FspHdrXdes struct {
 func NewXdes() Xdes {
 	return Xdes{}
 }
-func NewFspHdrXdes() FspHdrXdes {
+func NewFspHdrXdes(page *Page) FspHdrXdes {
 	return FspHdrXdes{
-		// Page: page,
+		Page: page,
 	}
 }
 func (fsp FspHdrXdes) String() string {
@@ -83,21 +87,21 @@ func (f *FspHdrXdes) Pos_Fsp_Header() uint64 {
 }
 
 // https://blog.jcole.us/2013/01/04/page-management-in-innodb-space-files/
-func (f *FspHdrXdes) Fsp_Header(p *Page) {
+func (f *FspHdrXdes) Fsp_Header() {
 
-	space_id := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header()), 4))
-	unused := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+4, 4))
-	size := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+8, 4))
-	free_limit := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+12, 4))
-	flags := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+16, 4))
-	frag_n_used := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+20, 4))
+	space_id := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header()), 4))
+	unused := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+4, 4))
+	size := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+8, 4))
+	free_limit := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+12, 4))
+	flags := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+16, 4))
+	frag_n_used := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+20, 4))
 	free_node := NewBaseNode()
-	flst_first_len := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+24, 4))
-	flst_first_page := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+28, 4))
-	flst_first_offset := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+32, 2))
+	flst_first_len := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+24, 4))
+	flst_first_page := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+28, 4))
+	flst_first_offset := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+32, 2))
 
-	flst_last_page := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+34, 4))
-	flst_last_offset := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+38, 2))
+	flst_last_page := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+34, 4))
+	flst_last_offset := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+38, 2))
 
 	free_node.Flst_first_len = flst_first_len
 	free_node.Flst_first_page = flst_first_page
@@ -106,7 +110,7 @@ func (f *FspHdrXdes) Fsp_Header(p *Page) {
 	free_node.Flst_last_offset = flst_last_offset
 	// free_frag暂时不看
 	// full_frag暂时不看
-	first_unused_seg := uint64(p.BufferReadAt(int64(f.Pos_Fsp_Header())+72, 8))
+	first_unused_seg := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+72, 8))
 	// full_inodes暂时不看
 	// free_inodes暂时不看
 
@@ -117,20 +121,20 @@ func (f *FspHdrXdes) Fsp_Header(p *Page) {
 	for i := int64(0); i < 256; i++ {
 		pos := int64(150) + i*int64(40)
 		xdes := NewXdes()
-		f_seg_id := uint64(p.BufferReadAt(pos, 8))
+		f_seg_id := uint64(f.Page.BufferReadAt(pos, 8))
 		pos = pos + 8
 		node := NewNode()
-		node.Prev_page = uint64(p.BufferReadAt(pos, 4))
+		node.Prev_page = uint64(f.Page.BufferReadAt(pos, 4))
 		pos = pos + 4
-		node.Prev_offset = uint64(p.BufferReadAt(pos, 2))
+		node.Prev_offset = uint64(f.Page.BufferReadAt(pos, 2))
 		pos = pos + 2
-		node.Next_page = uint64(p.BufferReadAt(pos, 4))
+		node.Next_page = uint64(f.Page.BufferReadAt(pos, 4))
 		pos = pos + 4
-		node.Next_offset = uint64(p.BufferReadAt(pos, 2))
+		node.Next_offset = uint64(f.Page.BufferReadAt(pos, 2))
 		pos = pos + 2
-		state := uint64(p.BufferReadAt(pos, 4))
+		state := uint64(f.Page.BufferReadAt(pos, 4))
 		pos = pos + 4
-		bitmap := p.ReadBytes(pos, 16)
+		bitmap := f.Page.ReadBytes(pos, 16)
 		pos = pos + 16
 		xdes.Bitmap = bitmap
 		xdes.F_seg_id = f_seg_id
@@ -139,4 +143,11 @@ func (f *FspHdrXdes) Fsp_Header(p *Page) {
 		f.Xdes[i] = xdes
 	}
 
+}
+func (f *FspHdrXdes) Dump() {
+	println("fsp header:")
+
+	data, _ := json.Marshal(f)
+	outStr := pretty.Pretty(data)
+	fmt.Printf("%s\n", outStr)
 }

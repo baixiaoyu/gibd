@@ -70,14 +70,14 @@ func (index *BTreeIndex) Min_Page_At_Level(level int) *Index {
 	idx := index.Root
 	record := idx.Min_Record()
 	Log.Info("min_page_at_level get record,========>%+v\n", record)
-	Log.Info("min_page_at_level ,idx.pageHeader.level========>%+v\n", idx.pageHeader.level)
+	Log.Info("min_page_at_level ,idx.pageHeader.level========>%+v\n", idx.PageHeader.Level)
 
-	for record != nil && idx.pageHeader.level > uint64(level) {
+	for record != nil && idx.PageHeader.Level > uint64(level) {
 		switch record.record.(type) {
 		case *UserRecord:
 			idx := index.Page(record.record.(*UserRecord).child_page_number)
 			record = idx.Min_Record()
-			if idx.pageHeader.level == uint64(level) {
+			if idx.PageHeader.Level == uint64(level) {
 				return idx
 			}
 		}
