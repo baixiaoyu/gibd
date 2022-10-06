@@ -3,7 +3,9 @@ package gibd
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
+	"regexp"
 	"unsafe"
 
 	"github.com/astaxie/beego/logs"
@@ -98,34 +100,34 @@ func (p *Page) ReadBytes(offset int64, size int64) []byte {
 	return byteStorage
 }
 
-func (p *Page) test(b []byte) int {
+// func (p *Page) test(b []byte) int {
 
-	if len(b) == 3 {
-		b = append([]byte{0}, b...)
-	}
-	bytesBuffer := bytes.NewBuffer(b)
-	switch len(b) {
-	case 1:
-		var tmp uint8
-		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
-		return int(tmp)
-	case 2:
-		var tmp uint16
-		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
-		return int(tmp)
-	case 4:
-		var tmp uint32
-		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
-		return int(tmp)
+// 	if len(b) == 3 {
+// 		b = append([]byte{0}, b...)
+// 	}
+// 	bytesBuffer := bytes.NewBuffer(b)
+// 	switch len(b) {
+// 	case 1:
+// 		var tmp uint8
+// 		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
+// 		return int(tmp)
+// 	case 2:
+// 		var tmp uint16
+// 		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
+// 		return int(tmp)
+// 	case 4:
+// 		var tmp uint32
+// 		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
+// 		return int(tmp)
 
-	case 8:
-		var tmp uint64
-		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
-		return int(tmp)
-	default:
-		return 0
-	}
-}
+// 	case 8:
+// 		var tmp uint64
+// 		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
+// 		return int(tmp)
+// 	default:
+// 		return 0
+// 	}
+// }
 
 func (p *Page) BytesToUIntLittleEndian(b []byte) int {
 
@@ -191,4 +193,127 @@ func BytesToBinaryString(bs []byte) string {
 		buf.WriteString(fmt.Sprintf("%08b", v))
 	}
 	return buf.String()
+}
+
+func IntToBytes(n int) []byte {
+	x := int32(n)
+	bytesBuffer := bytes.NewBuffer([]byte{})
+	binary.Write(bytesBuffer, binary.BigEndian, x)
+	return bytesBuffer.Bytes()
+}
+
+func UintToBytes(n uint16) []byte {
+	x := uint32(n)
+	bytesBuffer := bytes.NewBuffer([]byte{})
+	binary.Write(bytesBuffer, binary.BigEndian, x)
+	return bytesBuffer.Bytes()
+}
+
+func FindTwoscomplement(inputString string) (bstring string, isMinus bool) {
+	str := []byte(inputString)
+	if str[0] == '0' {
+		return "[" + string(str) + "]", false
+	}
+	n := len(str)
+
+	// Traverse the string to get first '1' from
+	// the last of string
+	var i int
+	for i = n - 1; i >= 0; i-- {
+		if str[i] == '1' {
+			break
+		}
+
+	}
+
+	// If there exists no '1' concat 1 at the
+	// starting of string
+	if i == -1 {
+		return "1" + string(str), true
+	}
+
+	// Continue traversal after the position of
+	// first '1'
+	for k := i - 1; k >= 0; k-- {
+		//Just flip the values
+		if str[k] == '1' {
+			// str.replace(k, k+1, "0")
+			// str = strings.Replace(str, "1", "0", 1)
+			str[k] = '0'
+		} else {
+			// str.replace(k, k+1, "1")
+			//str = strings.Replace(str, "0", "1", 1)
+			str[k] = '1'
+		}
+
+	}
+	str[0] = '1'
+	result := "[" + string(str) + "]"
+	// return the modified string
+	return result, true
+}
+
+const (
+	zero  = byte('0')
+	one   = byte('1')
+	lsb   = byte('[') // left square brackets
+	rsb   = byte(']') // right square brackets
+	space = byte(' ')
+)
+
+func init() {
+	uint8arr[0] = 128
+	uint8arr[1] = 64
+	uint8arr[2] = 32
+	uint8arr[3] = 16
+	uint8arr[4] = 8
+	uint8arr[5] = 4
+	uint8arr[6] = 2
+	uint8arr[7] = 1
+}
+
+var uint8arr [8]uint8
+
+// ErrBadStringFormat represents a error of input string's format is illegal .
+var ErrBadStringFormat = errors.New("bad string format")
+
+// ErrEmptyString represents a error of empty input string.
+var ErrEmptyString = errors.New("empty string")
+
+// regex for delete useless string which is going to be in binary format.
+var rbDel = regexp.MustCompile(`[^01]`)
+
+// BinaryStringToBytes get the binary bytes according to the
+// input string which is in binary format.
+func BinaryStringToBytes(s string) (bs []byte) {
+	if len(s) == 0 {
+		panic(ErrEmptyString)
+	}
+
+	s = rbDel.ReplaceAllString(s, "")
+	l := len(s)
+	if l == 0 {
+		panic(ErrBadStringFormat)
+	}
+
+	mo := l % 8
+	l /= 8
+	if mo != 0 {
+		l++
+	}
+	bs = make([]byte, 0, l)
+	mo = 8 - mo
+	var n uint8
+	for i, b := range []byte(s) {
+		m := (i + mo) % 8
+		switch b {
+		case one:
+			n += uint8arr[m]
+		}
+		if m == 7 {
+			bs = append(bs, n)
+			n = 0
+		}
+	}
+	return
 }

@@ -365,14 +365,41 @@ func (index *Index) record(offset uint64) *Record {
 		//   |  1 | cccccc   | ll    |    NULL |      30 |
 		//   +----+----------+-------+---------+---------+
 		fmt.Println("offset ", offset)
-		cluster_key_fileds := (index.Page.BufferReadAt(int64(offset), 4) % 32) ^ 128
+		// cluster_key_fileds := (index.Page.BufferReadAt(int64(offset), 4))
+		var b [4]byte
+		var v2 = 128
+		b[0] = uint8(v2)
+		b[1] = uint8(v2 >> 8)
+		b[2] = uint8(v2 >> 16)
+		b[3] = uint8(v2 >> 24)
+		var res = make([]byte, 4)
 		bytes := index.Page.ReadBytes(int64(offset), 4)
-		fmt.Println(bytes)
-		fmt.Println("%v", bytes)
-		bstring := BytesToBinaryString(bytes)
-		fmt.Println("string", bstring)
+		// var bytes = make([]byte, 4)
+		// bytes = []byte{0x80, 0x00, 0x00, 0x05}
+		// bytes = []byte{0x7f, 0xff, 0xff, 0xfb} //-5
 
-		fmt.Println("cluster key fileds ==", cluster_key_fileds)
+		for i := 0; i < 4; i++ {
+			res[i] = bytes[i] ^ b[i]
+		}
+
+		fmt.Println(bytes)
+		fmt.Println(res)
+		restring := BytesToBinaryString(res)
+
+		resstrComp, isMinus := FindTwoscomplement(restring)
+
+		res2 := BinaryStringToBytes(resstrComp)
+		if isMinus {
+			for i := 0; i < 4; i++ {
+				res2[i] = res2[i] ^ b[i]
+			}
+		}
+
+		cluster_key_filed := index.Page.BytesToIntLittleEndian(res2)
+		if isMinus {
+			cluster_key_filed = -1 * cluster_key_filed
+		}
+		fmt.Println("cluster key fileds ==", cluster_key_filed)
 		transaction_id := index.Page.BufferReadAt(int64(offset)+4, 6)
 		fmt.Println("transaction_id ==", transaction_id)
 		roll_pointer := index.Page.BufferReadAt(int64(offset)+10, 7)
