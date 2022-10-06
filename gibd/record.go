@@ -38,9 +38,9 @@ type RecordHeader struct {
 	Info_flags  uint64         `json:"info_flags"`
 	Offset_size uint64         `json:"offset_size"`
 	N_fields    uint64         `json:"n_fields"`
-	Nulls       []string       `json:"nulls"`
+	Nulls       string         `json:"nulls"`
 	Lengths     map[string]int `json:"lengths"`
-	Externs     []string       `json:"externs"`
+	Externs     string         `json:"externs"`
 }
 
 func NewRecordHeader(offset uint64) *RecordHeader {
@@ -110,10 +110,10 @@ type UserRecord struct {
 	key               []*FieldDescriptor
 	row               []*FieldDescriptor
 	sys               []*FieldDescriptor
-	child_page_number uint64
-	transaction_id    uint64
-	roll_pointer      *Pointer
-	length            uint64
+	Child_page_number uint64   `json:"child_page_number"`
+	Transaction_id    uint64   `json:"trx_id"`
+	Roll_pointer      *Pointer `json:"roll_pointer"`
+	Length            uint64   `json:"record_length"`
 }
 
 func NewUserRecord(format string, offset uint64, header *RecordHeader, next uint64) *UserRecord {
@@ -128,7 +128,7 @@ func NewUserRecord(format string, offset uint64, header *RecordHeader, next uint
 
 func (s *UserRecord) String() string {
 	return fmt.Sprintf("[record_type => %v, format => %v, offset => %v, next => %v, child_page_number=> %v transaction_id=> %v roll_pointer=>%v length=> %v]",
-		s.record_type, s.format, s.offset, s.next, s.child_page_number, s.transaction_id, s.roll_pointer, s.length)
+		s.record_type, s.format, s.offset, s.next, s.Child_page_number, s.Transaction_id, s.Roll_pointer, s.Length)
 }
 
 type FieldDescriptor struct {

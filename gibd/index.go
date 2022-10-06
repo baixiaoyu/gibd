@@ -346,6 +346,40 @@ func (index *Index) record(offset uint64) *Record {
 	}
 	all_field := index.Record_Fields()
 	if all_field == nil {
+		//没有字段元数据的时候，获取下记录的长度的准确值
+		// 为了测试方便，我们使用固定的表结构
+		// Create Table: CREATE TABLE `dba_user5` (
+		// 	`id` int(11) NOT NULL AUTO_INCREMENT,
+		// 	`username` varchar(100) DEFAULT NULL COMMENT '用户名',
+		// 	`class` varchar(100) DEFAULT NULL COMMENT 'class',
+		// 	`account` int(11) DEFAULT NULL,
+		// 	`version` int(11) DEFAULT NULL,
+		// 	PRIMARY KEY (`id`)
+		//   ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT
+		//   1 row in set (0.00 sec)
+
+		//   master [localhost] {msandbox} (test) > select * from dba_user5;
+		//   +----+----------+-------+---------+---------+
+		//   | id | username | class | account | version |
+		//   +----+----------+-------+---------+---------+
+		//   |  1 | cccccc   | ll    |    NULL |      30 |
+		//   +----+----------+-------+---------+---------+
+		fmt.Println("offset ", offset)
+		cluster_key_fileds := (index.Page.BufferReadAt(int64(offset), 4) % 32) ^ 128
+		bytes := index.Page.ReadBytes(int64(offset), 4)
+		fmt.Println(bytes)
+		fmt.Println("%v", bytes)
+		bstring := BytesToBinaryString(bytes)
+		fmt.Println("string", bstring)
+
+		fmt.Println("cluster key fileds ==", cluster_key_fileds)
+		transaction_id := index.Page.BufferReadAt(int64(offset)+4, 6)
+		fmt.Println("transaction_id ==", transaction_id)
+		roll_pointer := index.Page.BufferReadAt(int64(offset)+10, 7)
+		fmt.Println("roll pointer ==", roll_pointer)
+		non_key_fileds := index.Page.BufferReadAt(int64(offset)+17, 14)
+		fmt.Println("non_key_fileds ==", non_key_fileds)
+
 		return NewRecord(index.Page, this_record)
 	} else {
 
@@ -387,12 +421,12 @@ func (index *Index) record(offset uint64) *Record {
 		this_record.sys = syss
 
 		if index.IsLeaf() == false {
-			this_record.child_page_number = uint64(index.Page.BufferReadAt(int64(offset), 4))
+			this_record.Child_page_number = uint64(index.Page.BufferReadAt(int64(offset), 4))
 			offset = offset + 4
 			rec_len += 4
 		}
 
-		this_record.length = rec_len
+		this_record.Length = rec_len
 
 		for i := 0; i < len(this_record.sys); i++ {
 			switch this_record.sys[i].name {
@@ -402,15 +436,15 @@ func (index *Index) record(offset uint64) *Record {
 				// } else {
 				// 	this_record.transaction_id = uint64(this_record.sys[i].value.([]uint8)[0])
 				// }
-				this_record.transaction_id = this_record.sys[i].value.(uint64)
-				Log.Info("record this record's transaction_id is =======> %+v\n", this_record.transaction_id)
+				this_record.Transaction_id = this_record.sys[i].value.(uint64)
+				Log.Info("record this record's transaction_id is =======> %+v\n", this_record.Transaction_id)
 			case "DB_ROLL_PTR":
 				// if len(this_record.sys[i].value.([]uint8)) == 0 {
 				// 	this_record.roll_pointer = 0
 				// } else {
 				// 	this_record.roll_pointer = uint64(this_record.sys[i].value.([]uint8)[0])
 				// }
-				this_record.roll_pointer = this_record.sys[i].value.(*Pointer)
+				this_record.Roll_pointer = this_record.sys[i].value.(*Pointer)
 
 			}
 
@@ -741,7 +775,12 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-5, 1))
 		header.N_owned = bits2 & 0x0f
 		header.Info_flags = (bits2 & 0xf0) >> 4
-		index.Record_Header_Compact_Additional(header, offset)
+		//用户记录去查additional
+		if header.Record_Type == "conventional" {
+			fmt.Println("offset", offset-5)
+			index.Record_Header_Compact_Additional(header, offset-5)
+		}
+
 		header_len = 2 + 2 + 1 + 0 //0 代表record_header_compact_additional中处理记录
 
 	case "redundant":
@@ -782,22 +821,36 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 func (index *Index) Record_Header_Compact_Additional(header *RecordHeader, offset uint64) {
 	switch header.Record_Type {
 	case "conventional", "node_pointer":
+		// 变长部分，如果没有列的元数据信息，没法取长度，所以如果自己知道表信息，可以手工设置字节长度，在else中判断
 		if index.Record_Format != nil {
 			header.Nulls = index.Record_Header_Compact_Null_Bitmap(offset)
 			header.Lengths, header.Externs = index.Record_Header_Compact_Variable_Lengths_And_Externs(offset, header.Nulls)
+		} else {
+			//人为决定获取长度处理
+			offset = offset - 1
+
+			header.Nulls = index.Record_Header_Compact_Null_Bitmap(offset)
+			header.Lengths, header.Externs = index.Record_Header_Compact_Variable_Lengths_And_Externs(offset, header.Nulls)
+
 		}
 	}
 
 }
 
-func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) []string {
+func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) string {
 	//fields := index.record_fields()
 	//size = fields.count(is_nullable())
-	return []string{}
+	//方便测试，将null bitmap和extern的信息放在了一起，默认测试分别占用1个字节。
+	offset = offset - 1
+
+	nulls := index.Page.ReadBytes(int64(offset), 2)
+
+	nullString := BytesToBinaryString(nulls)
+	return nullString
 }
 
-func (index *Index) Record_Header_Compact_Variable_Lengths_And_Externs(offset uint64, header_nulls []string) (map[string]int, []string) {
-	return nil, nil
+func (index *Index) Record_Header_Compact_Variable_Lengths_And_Externs(offset uint64, header_nulls string) (map[string]int, string) {
+	return nil, ""
 
 }
 
@@ -842,8 +895,8 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 	index.Record_Format = index.Get_Record_Format()
 	if index.Record_Format != nil {
 		header.Lengths = make(map[string]int)
-		header.Nulls = []string{}
-		header.Externs = []string{}
+		header.Nulls = ""
+		header.Externs = ""
 		all_fields := index.Record_Fields()
 		Log.Info("record_header_redundant_additional的 all_fields 内容是==================>%v\n", len(all_fields))
 		Log.Info("record_header_redundant_additional的 field_offset 长度是==================>%v\n", len(field_offsets))
@@ -856,17 +909,17 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 			}
 
 			if f.position >= len(nulls) {
-				header.Nulls = append(header.Nulls, "")
+				header.Nulls = header.Nulls + ""
 			} else {
 				if nulls[f.position] {
-					header.Nulls = append(header.Nulls, f.name)
+					header.Nulls = header.Nulls + f.name
 				}
 			}
 			if f.position >= len(externs) {
-				header.Externs = append(header.Externs, "")
+				header.Externs = header.Externs + ""
 			} else {
 				if externs[f.position] {
-					header.Externs = append(header.Externs, f.name)
+					header.Externs = header.Externs + f.name
 				}
 			}
 

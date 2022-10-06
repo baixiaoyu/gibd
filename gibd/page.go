@@ -1,8 +1,6 @@
 package gibd
 
 import (
-	"bytes"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -140,10 +138,7 @@ func (p *Page) Page_Dump() {
 		fsphdxdes := NewFspHdrXdes(p)
 		fsphdxdes.Fsp_Header()
 		fsphdxdes.Dump()
-		// p.Fsphdxdes.Fsp_Header(p)
-		// TODO
-		// fspPage := FspPage(p)
-		// fspPage.Dump()
+
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_IBUF_BITMAP {
 		// TODO
@@ -154,105 +149,19 @@ func (p *Page) Page_Dump() {
 
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_INDEX {
-		// TODO
 		indexPage := NewIndex(p)
 		indexPage.Page_Header()
 		indexPage.Dump()
 		indexPage.each_record()
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_TYPE_ALLOCATED {
-		// do nothing
+		// do nothing,new page
 	}
 
 	if p.FileHeader.Page_type == FIL_PAGE_UNDO_LOG {
 		// undo block parse
 	}
 
-}
-
-func (p *Page) BufferReadAt(offset int64, size int64) int {
-
-	byteStorage := make([]byte, size)
-	byteReader := bytes.NewReader(*p.Buffer)
-	byteReader.ReadAt(byteStorage, offset)
-
-	return p.BytesToUIntLittleEndian(byteStorage)
-}
-
-func (p *Page) BufferReadAtToSignInt(offset int64, size int64) int {
-
-	byteStorage := make([]byte, size)
-	byteReader := bytes.NewReader(*p.Buffer)
-	byteReader.ReadAt(byteStorage, offset)
-
-	return p.BytesToIntLittleEndian(byteStorage)
-}
-
-func (p *Page) ReadBytes(offset int64, size int64) []byte {
-
-	byteStorage := make([]byte, size)
-	byteReader := bytes.NewReader(*p.Buffer)
-	byteReader.ReadAt(byteStorage, offset)
-
-	return byteStorage
-}
-
-func (p *Page) BytesToUIntLittleEndian(b []byte) int {
-
-	if len(b) == 3 {
-		b = append([]byte{0}, b...)
-	}
-	bytesBuffer := bytes.NewBuffer(b)
-	switch len(b) {
-	case 1:
-		var tmp uint8
-		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
-		return int(tmp)
-	case 2:
-		var tmp uint16
-		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
-		return int(tmp)
-	case 4:
-		var tmp uint32
-		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
-		return int(tmp)
-
-	case 8:
-		var tmp uint64
-		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
-		return int(tmp)
-	default:
-		return 0
-	}
-}
-
-func (p *Page) BytesToIntLittleEndian(b []byte) int {
-
-	if len(b) == 3 {
-		b = append([]byte{0}, b...)
-	}
-	bytesBuffer := bytes.NewBuffer(b)
-	switch len(b) {
-	case 1:
-		var tmp int8
-		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
-		return int(tmp)
-	case 2:
-		var tmp int16
-		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
-		return int(tmp)
-	case 4:
-		var tmp int32
-		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
-		return int(tmp)
-
-	case 8:
-		var tmp int64
-		binary.Read(bytesBuffer, binary.BigEndian, &tmp)
-		return int(tmp)
-	default:
-		return 0
-	}
 }
 
 func (p Page) String() string {

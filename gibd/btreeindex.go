@@ -75,7 +75,7 @@ func (index *BTreeIndex) Min_Page_At_Level(level int) *Index {
 	for record != nil && idx.PageHeader.Level > uint64(level) {
 		switch record.record.(type) {
 		case *UserRecord:
-			idx := index.Page(record.record.(*UserRecord).child_page_number)
+			idx := index.Page(record.record.(*UserRecord).Child_page_number)
 			record = idx.Min_Record()
 			if idx.PageHeader.Level == uint64(level) {
 				return idx

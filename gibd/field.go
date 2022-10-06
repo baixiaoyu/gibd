@@ -146,12 +146,12 @@ func (rf *RecordField) length(record *UserRecord) int64 {
 	var len int64
 	name_in_map := false
 	for k, _ := range record.header.Lengths {
-		if rf.name == k {
+		if rf.name == string(k) {
 			name_in_map = true
 		}
 	}
 	if name_in_map {
-		len = int64(record.header.Lengths[rf.name])
+		// len = int64(record.header.Lengths[byte(rf.name)])--todo
 	} else {
 		switch value := rf.data_type.(type) {
 		case IntegerType:
@@ -173,7 +173,7 @@ func (rf *RecordField) length(record *UserRecord) int64 {
 
 func (rf *RecordField) Is_Extern(record *UserRecord) bool {
 	for i := 0; i < len(record.header.Externs); i++ {
-		if rf.name == record.header.Externs[i] {
+		if rf.name == string(record.header.Externs[i]) {
 			return true
 		}
 	}
