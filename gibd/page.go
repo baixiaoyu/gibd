@@ -134,6 +134,7 @@ func (p *Page) Page_Dump() {
 		dict_header.Dump()
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_TYPE_FSP_HDR {
+		//表空间从block 0 是fsp extent descriptor信息，
 		fmt.Println("fsp header:")
 		fsphdxdes := NewFspHdrXdes(p)
 		fsphdxdes.Fsp_Header()
@@ -142,15 +143,22 @@ func (p *Page) Page_Dump() {
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_IBUF_BITMAP {
 		// TODO
+		//表空间从block 1 是IBUF_BITMAP信息，
 	}
 
 	if p.FileHeader.Page_type == FIL_PAGE_INODE {
-		// TODO
+		//表空间从block 2 是INODE信息，
+		iNodePage := NewInode(p)
+		iNodePage.ParseInodeBlock()
+		iNodePage.Dump()
 
 	}
 	if p.FileHeader.Page_type == FIL_PAGE_INDEX {
+		//表空间从block 3开始是用户数据页
 		indexPage := NewIndex(p)
 		indexPage.Page_Header()
+		indexPage.Fseg_Header()
+
 		indexPage.Dump()
 		indexPage.each_record()
 	}

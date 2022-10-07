@@ -46,8 +46,8 @@ type PageHeader struct {
 // # (the actual data) which grow ascending by offset, free space, the page
 // # directory which grows descending by offset, and the FIL trailer.
 type Index struct {
-	Page             *Page
-	recordHeader     *RecordHeader
+	Page *Page
+	// recordHeader     *RecordHeader
 	SystemRecords    []SystemRecord `json:"systemrecords"`
 	UserRecords      []UserRecord   `json:"userrecords"`
 	fileDesc         FieldDescriptor
@@ -193,8 +193,12 @@ func (index *Index) Page_Header() {
 		index.PageHeader.Format = "compact"
 	}
 
+}
+
+func (index *Index) Fseg_Header() {
 	//get fseg header,put them together,index的叶子和非叶子节点使用的是2个segment管理
-	pos := int64(74)
+	// pos 74开始
+	pos := int64(index.Pos_Fseg_Header())
 	inodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4))
 	pos = pos + 4
 	inodePageNumer := uint64(index.Page.BufferReadAt(pos, 4))
@@ -220,8 +224,22 @@ func (index *Index) Page_Header() {
 	index.FsegHeader = *fsegHeader
 }
 
+func (index *Index) Page_Directory() {
+	pos := int64(index.Pos_Directory())
+
+	numSlot := index.Directory_Slots()
+
+	for i := uint64(0); i < numSlot; i++ {
+		slot := uint64(index.Page.BufferReadAt(pos-2, 2))
+		pos = pos - 2
+		fmt.Printf("page direcotry slot %d,:%v\n", i, slot)
+	}
+}
+
 func (index *Index) IsRoot() bool {
-	return index.recordHeader.Prev == 0 && index.recordHeader.Next == 0
+	// return index.recordHeader.Prev == 0 && index.recordHeader.Next == 0
+	//上面的判断不准吧
+	return false
 }
 
 func (index *Index) IsLeaf() bool {
@@ -765,7 +783,7 @@ func (index *Index) Supremum() *Record {
 func (index *Index) System_Record(offset uint64) *Record {
 
 	header, _ := index.Record_Header(offset)
-	index.recordHeader = header
+	// index.recordHeader = header
 	data := index.Page.ReadBytes(int64(offset), int64(index.Size_Mum_Record()))
 	systemrecord := NewSystemRecord(offset, header, header.Next, data, 0)
 	record := NewRecord(index.Page, systemrecord)
@@ -972,4 +990,5 @@ func (f *Index) Dump() {
 	data, _ := json.Marshal(f)
 	outStr := pretty.Pretty(data)
 	fmt.Printf("%s\n", outStr)
+	f.Page_Directory()
 }

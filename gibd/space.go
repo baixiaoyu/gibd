@@ -219,35 +219,35 @@ func (s *Space) Is_System_Space() bool {
 	//_bytes = getData(file, 24, 2)
 	offset := 24 + (0 * DEFAULT_PAGE_SIZE)
 	fsp_hdr := s.Read_At_Offset(uint64(offset), 2)
-	fsp_hdr_v, _ := BytesToUIntLittleEndian(fsp_hdr)
+	fsp_hdr_v := BytesToUIntLittleEndian(fsp_hdr)
 
 	offset = 24 + (1 * DEFAULT_PAGE_SIZE)
 	IBUF_BITMAP := s.Read_At_Offset(uint64(offset), 2)
-	IBUF_BITMAP_v, _ := BytesToUIntLittleEndian(IBUF_BITMAP)
+	IBUF_BITMAP_v := BytesToUIntLittleEndian(IBUF_BITMAP)
 
 	offset = 24 + (2 * DEFAULT_PAGE_SIZE)
 	INODE := s.Read_At_Offset(uint64(offset), 2)
-	INODE_v, _ := BytesToUIntLittleEndian(INODE)
+	INODE_v := BytesToUIntLittleEndian(INODE)
 
 	offset = 24 + (3 * DEFAULT_PAGE_SIZE)
 	SYS1 := s.Read_At_Offset(uint64(offset), 2)
-	SYS1_v, _ := BytesToUIntLittleEndian(SYS1)
+	SYS1_v := BytesToUIntLittleEndian(SYS1)
 
 	offset = 24 + (4 * DEFAULT_PAGE_SIZE)
 	INDEX := s.Read_At_Offset(uint64(offset), 2)
-	INDEX_v, _ := BytesToUIntLittleEndian(INDEX) //check this value
+	INDEX_v := BytesToUIntLittleEndian(INDEX) //check this value
 
 	offset = 24 + (5 * DEFAULT_PAGE_SIZE)
 	TRX_SYS := s.Read_At_Offset(uint64(offset), 2)
-	TRX_SYS_v, _ := BytesToUIntLittleEndian(TRX_SYS)
+	TRX_SYS_v := BytesToUIntLittleEndian(TRX_SYS)
 
 	offset = 24 + (6 * DEFAULT_PAGE_SIZE)
 	SYS2 := s.Read_At_Offset(uint64(offset), 2)
-	SYS2_v, _ := BytesToUIntLittleEndian(SYS2)
+	SYS2_v := BytesToUIntLittleEndian(SYS2)
 
 	offset = 24 + (7 * DEFAULT_PAGE_SIZE)
 	SYS3 := s.Read_At_Offset(uint64(offset), 2)
-	SYS3_v, _ := BytesToUIntLittleEndian(SYS3)
+	SYS3_v := BytesToUIntLittleEndian(SYS3)
 
 	if fsp_hdr_v == 8 && IBUF_BITMAP_v == 5 && INODE_v == 3 && SYS1_v == 6 && INDEX_v == 17855 && TRX_SYS_v == 7 && SYS2_v == 6 && SYS3_v == 6 {
 		return true

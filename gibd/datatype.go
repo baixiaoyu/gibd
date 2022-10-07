@@ -55,10 +55,10 @@ func (integer *IntegerType) Value(data []byte, index *Index) int64 {
 }
 
 func (integer *IntegerType) Get_Uint(data []byte, nbits int, index *Index) int64 {
-	return int64(index.Page.BytesToUIntLittleEndian(data))
+	return int64(BytesToUIntLittleEndian(data))
 }
 func (integer *IntegerType) Get_Int(data []byte, nbits int, index *Index) int64 {
-	return int64(index.Page.BytesToIntLittleEndian(data))
+	return int64(BytesToIntLittleEndian(index.Page, data))
 }
 
 type TransactionIdType struct {

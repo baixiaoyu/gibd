@@ -25,7 +25,7 @@ func IsLittleEndian() bool {
 	return (b == 0x04)
 }
 
-func BytesToUIntLittleEndian(b []byte) (int, error) {
+func BytesToUIntLittleEndian1(b []byte) (int, error) {
 
 	if len(b) == 3 {
 		b = append([]byte{0}, b...)
@@ -78,7 +78,7 @@ func (p *Page) BufferReadAt(offset int64, size int64) int {
 	byteReader := bytes.NewReader(*p.Buffer)
 	byteReader.ReadAt(byteStorage, offset)
 
-	return p.BytesToUIntLittleEndian(byteStorage)
+	return BytesToUIntLittleEndian(byteStorage)
 
 }
 
@@ -88,7 +88,7 @@ func (p *Page) BufferReadAtToSignInt(offset int64, size int64) int {
 	byteReader := bytes.NewReader(*p.Buffer)
 	byteReader.ReadAt(byteStorage, offset)
 
-	return p.BytesToIntLittleEndian(byteStorage)
+	return BytesToIntLittleEndian(p, byteStorage)
 }
 
 func (p *Page) ReadBytes(offset int64, size int64) []byte {
@@ -129,7 +129,7 @@ func (p *Page) ReadBytes(offset int64, size int64) []byte {
 // 	}
 // }
 
-func (p *Page) BytesToUIntLittleEndian(b []byte) int {
+func BytesToUIntLittleEndian(b []byte) int {
 	// 不知道这种长度是3，7，6的转化是否正确
 	if len(b) == 3 || len(b) == 7 {
 		b = append([]byte{0}, b...)
@@ -164,7 +164,7 @@ func (p *Page) BytesToUIntLittleEndian(b []byte) int {
 	}
 }
 
-func (p *Page) BytesToIntLittleEndian(b []byte) int {
+func BytesToIntLittleEndian(p *Page, b []byte) int {
 
 	if len(b) == 3 {
 		b = append([]byte{0}, b...)
@@ -347,7 +347,7 @@ func ParseMySQLInt(index *Index, bytes []byte) int {
 		}
 	}
 
-	finalRes := index.Page.BytesToIntLittleEndian(res2)
+	finalRes := BytesToIntLittleEndian(index.Page, res2)
 	if isMinus {
 		finalRes = -1 * finalRes
 	}

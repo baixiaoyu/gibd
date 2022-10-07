@@ -1,5 +1,6 @@
 package gibd
 
+//表示树，针对树的一些操作
 type BTreeIndex struct {
 	Root             *Index
 	Space            *Space
