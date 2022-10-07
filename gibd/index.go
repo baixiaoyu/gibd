@@ -366,46 +366,34 @@ func (index *Index) record(offset uint64) *Record {
 		//   +----+----------+-------+---------+---------+
 		fmt.Println("offset ", offset)
 		// cluster_key_fileds := (index.Page.BufferReadAt(int64(offset), 4))
-		var b [4]byte
-		var v2 = 128
-		b[0] = uint8(v2)
-		b[1] = uint8(v2 >> 8)
-		b[2] = uint8(v2 >> 16)
-		b[3] = uint8(v2 >> 24)
-		var res = make([]byte, 4)
+
 		bytes := index.Page.ReadBytes(int64(offset), 4)
-		// var bytes = make([]byte, 4)
-		// bytes = []byte{0x80, 0x00, 0x00, 0x05}
-		// bytes = []byte{0x7f, 0xff, 0xff, 0xfb} //-5
 
-		for i := 0; i < 4; i++ {
-			res[i] = bytes[i] ^ b[i]
-		}
-
-		fmt.Println(bytes)
-		fmt.Println(res)
-		restring := BytesToBinaryString(res)
-
-		resstrComp, isMinus := FindTwoscomplement(restring)
-
-		res2 := BinaryStringToBytes(resstrComp)
-		if isMinus {
-			for i := 0; i < 4; i++ {
-				res2[i] = res2[i] ^ b[i]
-			}
-		}
-
-		cluster_key_filed := index.Page.BytesToIntLittleEndian(res2)
-		if isMinus {
-			cluster_key_filed = -1 * cluster_key_filed
-		}
+		cluster_key_filed := ParseMySQLInt(index, bytes)
 		fmt.Println("cluster key fileds ==", cluster_key_filed)
+
 		transaction_id := index.Page.BufferReadAt(int64(offset)+4, 6)
+
 		fmt.Println("transaction_id ==", transaction_id)
+
 		roll_pointer := index.Page.BufferReadAt(int64(offset)+10, 7)
 		fmt.Println("roll pointer ==", roll_pointer)
-		non_key_fileds := index.Page.BufferReadAt(int64(offset)+17, 14)
-		fmt.Println("non_key_fileds ==", non_key_fileds)
+
+		username := index.Page.ReadBytes(int64(offset)+17, 2)
+		fmt.Println(" value1==", string(username))
+
+		bytes = index.Page.ReadBytes(int64(offset)+19, 4)
+		class := ParseMySQLInt(index, bytes)
+		fmt.Println(" value2==", (class))
+
+		bytes = index.Page.ReadBytes(int64(offset)+23, 4)
+		account := ParseMySQLInt(index, bytes)
+
+		fmt.Println(" value3==", (account))
+
+		bytes = index.Page.ReadBytes(int64(offset)+29, 4)
+		version := ParseMySQLInt(index, bytes)
+		fmt.Println(" value4==", (version))
 
 		return NewRecord(index.Page, this_record)
 	} else {
@@ -870,7 +858,7 @@ func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) string {
 	//方便测试，将null bitmap和extern的信息放在了一起，默认测试分别占用1个字节。
 	offset = offset - 1
 
-	nulls := index.Page.ReadBytes(int64(offset), 2)
+	nulls := index.Page.ReadBytes(int64(offset), 1)
 
 	nullString := BytesToBinaryString(nulls)
 	return nullString

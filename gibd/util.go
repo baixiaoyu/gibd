@@ -130,10 +130,16 @@ func (p *Page) ReadBytes(offset int64, size int64) []byte {
 // }
 
 func (p *Page) BytesToUIntLittleEndian(b []byte) int {
-
-	if len(b) == 3 {
+	// 不知道这种长度是3，7，6的转化是否正确
+	if len(b) == 3 || len(b) == 7 {
 		b = append([]byte{0}, b...)
 	}
+
+	if len(b) == 6 {
+		b = append([]byte{0}, b...)
+		b = append([]byte{0}, b...)
+	}
+
 	bytesBuffer := bytes.NewBuffer(b)
 	switch len(b) {
 	case 1:
@@ -316,4 +322,35 @@ func BinaryStringToBytes(s string) (bs []byte) {
 		}
 	}
 	return
+}
+
+func ParseMySQLInt(index *Index, bytes []byte) int {
+	var b [4]byte
+	var v2 = 128
+	b[0] = uint8(v2)
+	b[1] = uint8(v2 >> 8)
+	b[2] = uint8(v2 >> 16)
+	b[3] = uint8(v2 >> 24)
+	var res = make([]byte, 4)
+	for i := 0; i < 4; i++ {
+		res[i] = bytes[i] ^ b[i]
+	}
+
+	restring := BytesToBinaryString(res)
+
+	resstrComp, isMinus := FindTwoscomplement(restring)
+
+	res2 := BinaryStringToBytes(resstrComp)
+	if isMinus {
+		for i := 0; i < 4; i++ {
+			res2[i] = res2[i] ^ b[i]
+		}
+	}
+
+	finalRes := index.Page.BytesToIntLittleEndian(res2)
+	if isMinus {
+		finalRes = -1 * finalRes
+	}
+
+	return finalRes
 }
