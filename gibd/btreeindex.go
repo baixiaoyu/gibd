@@ -2,7 +2,7 @@ package gibd
 
 //表示树，针对树的一些操作
 type BTreeIndex struct {
-	Root             *Index
+	Root             *Index //相当于节点
 	Space            *Space
 	Record_describer interface{}
 }
@@ -23,9 +23,9 @@ func (index *BTreeIndex) Page(page_number uint64) *Index {
 	return i
 }
 
-func (index *BTreeIndex) Each_Record() []*Record {
+func (index *BTreeIndex) Each_Record(dh *DataDictionary) []*Record {
 	var records []*Record
-	pages_at_level0 := index.Each_Page_At_Level(0)
+	pages_at_level0 := index.Each_Page_At_Level(0, dh)
 	for _, value := range pages_at_level0 {
 		Log.Info("btreeindex pages_at_level0,========>%+v\n", value)
 
@@ -42,8 +42,9 @@ func (index *BTreeIndex) Each_Record() []*Record {
 	return records
 }
 
-func (index *BTreeIndex) Each_Page_At_Level(level int) []*Index {
+func (index *BTreeIndex) Each_Page_At_Level(level int, dh *DataDictionary) []*Index {
 	min_page := index.Min_Page_At_Level(level)
+	min_page.dh = dh
 	pages := index.Each_Page_From(min_page)
 	return pages
 }

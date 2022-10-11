@@ -55,7 +55,7 @@ type SYS struct {
 func Print_System_Spaces(innodb_system *gibd.System) {
 	//dd := newDataDictionary(innodb_system)
 	//dd.each_table()
-	btreeindexes := innodb_system.System_Space().Each_Index()
+	btreeindexes := innodb_system.System_Space().Each_Index(innodb_system)
 	fmt.Printf("name\t,pages\t,btreeindexes\n")
 	fmt.Printf("%+v\t", "System")
 	fmt.Printf("%+v\t", innodb_system.System_Space().Pages)
@@ -91,12 +91,12 @@ func main() {
 			innodb_system = gibd.NewSystem(file_arr)
 		}
 
-		space := innodb_system.System_Space()
-		page := space.Page(uint64(page_no))
+		// space := innodb_system.System_Space()
+		// page := space.Page(uint64(page_no))
 		Print_System_Spaces(innodb_system)
-		if page.FileHeader.Page_type == 3 {
-			//index := space.index(page_no)
-		}
+		// if page.FileHeader.Page_type == 3 {
+		// 	//index := space.index(page_no)
+		// }
 	case "page-dump":
 		space := gibd.NewSpace(file_arr)
 		page := space.Page(uint64(page_no))

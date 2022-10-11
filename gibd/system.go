@@ -1,5 +1,6 @@
 package gibd
 
+//系统表空间
 type System struct {
 	config          map[string]string
 	spaces          map[uint64]*Space
@@ -15,22 +16,27 @@ func NewSystem(filenames []string) *System {
 	space := NewSpace(filenames)
 	system.spaces = make(map[uint64]*Space)
 	system.spaces[space.Space_id] = space
-	system.Add_Space_File(filenames)
+	//	system.Add_Space_File(filenames)
 	system.data_dictionary = NewDataDictionary(system)
 	return system
 }
 func (system *System) Add_Space(space *Space) {
 	system.spaces[space.Space_id] = space
 }
-func (system *System) Add_Space_File(space_filenames []string) {
-	space := NewSpace(space_filenames)
-	space.Innodb_system = system
-	system.Add_Space(space)
-}
+
+// func (system *System) Add_Space_File(space_id uint64,space_filenames []string) {
+// space := NewSpace(space_filenames)
+// space.Innodb_system = system
+// system.Add_Space(space)
+
+// }
 
 func (system *System) System_Space() *Space {
 	for _, value := range system.spaces {
-		if value.Innodb_system != nil {
+		// if value.Innodb_system != nil {
+		// 	return value
+		// }
+		if value.IsSystemSpace {
 			return value
 		}
 	}

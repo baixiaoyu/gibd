@@ -140,11 +140,11 @@ func New(name string) (c interface{}, err error) {
 }
 
 type DataDictionary struct {
-	system_space *System
+	system *System
 }
 
-func NewDataDictionary(system_space *System) *DataDictionary {
-	return &DataDictionary{system_space: system_space}
+func NewDataDictionary(system *System) *DataDictionary {
+	return &DataDictionary{system: system}
 }
 func (dh *DataDictionary) Each_Table() []map[string]interface{} {
 	res := dh.Each_Record_From_Data_Dictionary_Index("SYS_TABLES", "PRIMARY")
@@ -178,7 +178,7 @@ func (dh *DataDictionary) Each_Record_From_Data_Dictionary_Index(table string, i
 	rootindex := dh.Data_Dictionary_Index(table, index)
 	Log.Info("each_record_from_data_dictionary_index rootindex.next========>%+v\n", rootindex.Root.Page.FileHeader.Next)
 
-	records := rootindex.Each_Record()
+	records := rootindex.Each_Record(dh)
 	// 对返回的每个记录进行处理
 
 	Log.Info("each_record_from_data_dictionary_index 所有的记录数%+v\n", len(records))
@@ -305,13 +305,13 @@ func (dh *DataDictionary) Data_Dictionary_Index(table_name string, index_name st
 	}
 	Log.Info("data_dictionary_index_record_describer======>%+v\n", record_describer)
 
-	return dh.system_space.System_Space().Index(index_root_page, record_describer)
+	return dh.system.System_Space().Index(index_root_page, record_describer)
 
 }
 
 //table_name string
 func (dh *DataDictionary) data_dictionary_indexes() Dict_Index {
-	page := dh.system_space.System_Space().Data_Dictionary_Page()
+	page := dh.system.System_Space().Data_Dictionary_Page()
 	header := NewSysDataDictionaryHeader(page)
 	header.Data_Dictionary_Header()
 	return header.Indexes
@@ -337,7 +337,7 @@ func (dh *DataDictionary) each_index_by_space_id(space_id uint64) []map[string]i
 
 }
 
-func (dh *DataDictionary) Record_Describer_By_Index_Id(index_id uint64) interface{} {
+func Record_Describer_By_Index_Id(dh *DataDictionary, index_id uint64) interface{} {
 
 	defer func() {
 		//捕获异常

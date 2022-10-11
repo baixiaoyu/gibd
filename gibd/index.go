@@ -58,6 +58,7 @@ type Index struct {
 	root             *Page
 	size             uint64
 	Record_Format    map[string]interface{} `json:"recordformat"`
+	dh               *DataDictionary        //系统表空间的时候使用
 }
 
 func NewIndex(page *Page) *Index {
@@ -578,7 +579,7 @@ func Restruct_Describer(a interface{}) map[string]interface{} {
 
 var fmap = make(map[int]string)
 
-// 记录描述符这应该重构下，放到记录那边去，描述符这有点混乱
+// 记录描述符这应该重构下，描述符这有点混乱
 //只实现了系统表systable sysindex 的description
 func (index *Index) Make_Record_Description() map[string]interface{} {
 	var position [1024]int
@@ -755,8 +756,8 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 }
 
 func (index *Index) Make_Record_Describer() interface{} {
-	if (index.Page.Space != nil) && (index.Page.Space.Innodb_system != nil) && index.PageHeader.Index_id != 0 {
-		record_describer := index.Page.Space.Innodb_system.data_dictionary.Record_Describer_By_Index_Id(index.PageHeader.Index_id)
+	if (index.Page.Space != nil) && index.Space.IsSystemSpace && index.PageHeader.Index_id != 0 {
+		record_describer := Record_Describer_By_Index_Id(index.dh, index.PageHeader.Index_id)
 		return record_describer
 	} else if index.Page.Space != nil {
 		record_describer := index.Page.Space.Record_describer

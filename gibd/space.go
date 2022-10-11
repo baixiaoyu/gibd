@@ -30,13 +30,14 @@ func NewDataFile(filename string, offset uint64) *DataFile {
 
 }
 
+//普通表空间
 type Space struct {
-	Datafiles        []*DataFile
-	Size             uint64
-	Pages            uint64
-	Name             string
-	Space_id         uint64
-	Innodb_system    *System
+	Datafiles []*DataFile
+	Size      uint64
+	Pages     uint64
+	Name      string
+	Space_id  uint64
+	// Innodb_system    *System
 	Record_describer interface{}
 	IsSystemSpace    bool
 }
@@ -66,7 +67,7 @@ func NewSpace(filenames []string) *Space {
 		Name:      name,
 		// Space_id:  spaceId,
 	}
-	page := s.Page(3)
+	page := s.Page(0)
 	page.Fil_Header()
 	s.Space_id = page.FileHeader.Space_id
 	s.IsSystemSpace = Is_System_Space(s)
@@ -101,10 +102,10 @@ func (s *Space) Index(root_page_number uint64, record_describer interface{}) *BT
 	return NewBTreeIndex(s, root_page_number, record_describer)
 }
 
-func (s *Space) Each_Index() []*BTreeIndex {
+func (s *Space) Each_Index(innodb_system *System) []*BTreeIndex {
 	//普通用户表空间一般只有一个index，如果没有设置参数，可能都放到系统表空间
 	var indexes []*BTreeIndex
-	root_pages := RemoveRepeatedElement(s.Each_Index_Root_Page_Number())
+	root_pages := RemoveRepeatedElement(s.Each_Index_Root_Page_Number(innodb_system))
 	Log.Info("eache_index all_root_page_number=========>%+v", root_pages)
 	for _, value := range root_pages {
 		indexes = append(indexes, s.Index(value, nil))
@@ -114,16 +115,18 @@ func (s *Space) Each_Index() []*BTreeIndex {
 }
 
 //获取表空间所有index的root page number
-func (s *Space) Each_Index_Root_Page_Number() []uint64 {
+func (s *Space) Each_Index_Root_Page_Number(innodb_system *System) []uint64 {
 	var root_page_numer []uint64
-	if s.Innodb_system != nil {
+	if s.IsSystemSpace {
 		//s.innodb_system.data_dictionary.each_index_by_space_id(s.get_space_id())
 		//data_dict := s.innodb_system.
-		for _, value := range s.Innodb_system.data_dictionary.each_index_by_space_id(s.Get_Space_Id()) {
+		for _, value := range innodb_system.data_dictionary.each_index_by_space_id(s.Get_Space_Id()) {
 			page_no := uint64(value["PAGE_NO"].(int64))
 			root_page_numer = append(root_page_numer, page_no)
 		}
 		return root_page_numer
+	} else {
+		//获取普通index表空间的root page number
 	}
 	return nil
 }
