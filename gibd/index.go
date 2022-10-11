@@ -199,13 +199,14 @@ func (index *Index) Fseg_Header() {
 	//get fseg header,put them together,index的叶子和非叶子节点使用的是2个segment管理
 	// pos 74开始
 	pos := int64(index.Pos_Fseg_Header())
-	inodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4))
+	inodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4)) //leaf inode
 	pos = pos + 4
 	inodePageNumer := uint64(index.Page.BufferReadAt(pos, 4))
 	pos = pos + 4
 	inodeOffset := uint64(index.Page.BufferReadAt(pos, 2))
 	pos = pos + 2
-	nonLeafInodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4))
+
+	nonLeafInodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4)) //none leaf inode
 	pos = pos + 4
 	nonLeafInodePageNumber := uint64(index.Page.BufferReadAt(pos, 4))
 	pos = pos + 4
@@ -860,7 +861,8 @@ func (index *Index) Record_Header_Compact_Additional(header *RecordHeader, offse
 			header.Lengths, header.Externs = index.Record_Header_Compact_Variable_Lengths_And_Externs(offset, header.Nulls)
 		} else {
 			//人为决定获取长度处理
-			offset = offset - 1
+			fmt.Println("offset for null", offset)
+			offset = offset - 2
 
 			header.Nulls = index.Record_Header_Compact_Null_Bitmap(offset)
 			header.Lengths, header.Externs = index.Record_Header_Compact_Variable_Lengths_And_Externs(offset, header.Nulls)
@@ -874,7 +876,6 @@ func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) string {
 	//fields := index.record_fields()
 	//size = fields.count(is_nullable())
 	//方便测试，将null bitmap和extern的信息放在了一起，默认测试分别占用1个字节。
-	offset = offset - 1
 
 	nulls := index.Page.ReadBytes(int64(offset), 1)
 
