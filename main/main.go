@@ -76,6 +76,7 @@ func main() {
 	var mode string
 
 	flag.StringVar(&file, "s", "", "表空间文件名")
+	//共享表空间第7块是数据字典头块
 	flag.IntVar(&page_no, "p", 7, "块号")
 	flag.StringVar(&mode, "m", "page-dump", "运行模式")
 
@@ -91,8 +92,9 @@ func main() {
 			innodb_system = gibd.NewSystem(file_arr)
 		}
 
-		// space := innodb_system.System_Space()
-		// page := space.Page(uint64(page_no))
+		space := innodb_system.System_Space()
+		page := space.Page(uint64(page_no))
+		page.Page_Dump()
 		Print_System_Spaces(innodb_system)
 		// if page.FileHeader.Page_type == 3 {
 		// 	//index := space.index(page_no)
