@@ -91,20 +91,20 @@ func (f *FspHdrXdes) Pos_Fsp_Header() uint64 {
 // https://blog.jcole.us/2013/01/04/page-management-in-innodb-space-files/
 func (f *FspHdrXdes) Fsp_Header() {
 
-	space_id := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header()), 4))
-	unused := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+4, 4))
-	size := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+8, 4))
-	free_limit := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+12, 4))
-	flags := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+16, 4))
-	frag_n_used := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+20, 4))
+	space_id := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header()), 4))
+	unused := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+4, 4))
+	size := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+8, 4))
+	free_limit := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+12, 4))
+	flags := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+16, 4))
+	frag_n_used := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+20, 4))
 
 	free_node := NewBaseNode()
-	len := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+24, 4))
-	flst_first_page := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+28, 4))
-	flst_first_offset := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+32, 2))
+	len := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+24, 4))
+	flst_first_page := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+28, 4))
+	flst_first_offset := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+32, 2))
 
-	flst_last_page := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+34, 4))
-	flst_last_offset := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+38, 2))
+	flst_last_page := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+34, 4))
+	flst_last_offset := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+38, 2))
 
 	free_node.ListLen = len
 	free_node.First_page = flst_first_page
@@ -113,7 +113,7 @@ func (f *FspHdrXdes) Fsp_Header() {
 	free_node.Last_offset = flst_last_offset
 	// free_frag暂时不看
 	// full_frag暂时不看
-	first_unused_seg := uint64(f.Page.BufferReadAt(int64(f.Pos_Fsp_Header())+72, 8))
+	first_unused_seg := uint64(BufferReadAt(f.Page, int64(f.Pos_Fsp_Header())+72, 8))
 	// full_inodes暂时不看
 	// free_inodes暂时不看
 
@@ -124,20 +124,20 @@ func (f *FspHdrXdes) Fsp_Header() {
 	for i := int64(0); i < 256; i++ {
 		pos := int64(150) + i*int64(40)
 		xdes := NewXdes()
-		f_seg_id := uint64(f.Page.BufferReadAt(pos, 8))
+		f_seg_id := uint64(BufferReadAt(f.Page, pos, 8))
 		pos = pos + 8
 		node := NewNode()
-		node.Prev_page = uint64(f.Page.BufferReadAt(pos, 4))
+		node.Prev_page = uint64(BufferReadAt(f.Page, pos, 4))
 		pos = pos + 4
-		node.Prev_offset = uint64(f.Page.BufferReadAt(pos, 2))
+		node.Prev_offset = uint64(BufferReadAt(f.Page, pos, 2))
 		pos = pos + 2
-		node.Next_page = uint64(f.Page.BufferReadAt(pos, 4))
+		node.Next_page = uint64(BufferReadAt(f.Page, pos, 4))
 		pos = pos + 4
-		node.Next_offset = uint64(f.Page.BufferReadAt(pos, 2))
+		node.Next_offset = uint64(BufferReadAt(f.Page, pos, 2))
 		pos = pos + 2
-		state := uint64(f.Page.BufferReadAt(pos, 4))
+		state := uint64(BufferReadAt(f.Page, pos, 4))
 		pos = pos + 4
-		bitmap := f.Page.ReadBytes(pos, 16)
+		bitmap := ReadBytes(f.Page, pos, 16)
 		pos = pos + 16
 
 		xdes.Bitmap = BytesToBinaryString(bitmap)

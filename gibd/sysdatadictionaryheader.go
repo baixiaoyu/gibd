@@ -64,21 +64,21 @@ func (dh *SysDataDictionaryHeader) Size_Data_Dictionary_Header() int {
 func (dh *SysDataDictionaryHeader) Data_Dictionary_Header() {
 	//dict_page := sys.system_space().data_dictionary_page()
 
-	dh.Max_row_id = uint64(dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header()), 8))
-	dh.Max_table_id = uint64(dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+8, 8))
-	dh.Max_index_id = uint64(dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+16, 8))
-	dh.Max_space_id = uint64(dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+24, 4))
-	dh.Unused_mix_id_low = uint64(dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+28, 4))
-	primary := dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+32, 4)
-	id := dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+36, 4)
+	dh.Max_row_id = uint64(BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header()), 8))
+	dh.Max_table_id = uint64(BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+8, 8))
+	dh.Max_index_id = uint64(BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+16, 8))
+	dh.Max_space_id = uint64(BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+24, 4))
+	dh.Unused_mix_id_low = uint64(BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+28, 4))
+	primary := BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+32, 4)
+	id := BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+36, 4)
 	var sys_table = SYS_TABLES{PRIMARY: uint64(primary), ID: uint64(id)}
-	primary = dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+40, 4)
+	primary = BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+40, 4)
 	var sys_column = SYS_COLUMNS{PRIMARY: uint64(primary)}
-	primary = dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+44, 4)
+	primary = BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+44, 4)
 	var sys_indexes = SYS_INDEXES{PRIMARY: uint64(primary)}
-	primary = dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+48, 4)
+	primary = BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+48, 4)
 	var sys_field = SYS_FIELDS{PRIMARY: uint64(primary)}
-	dh.Unused_space = uint64(dh.Page.BufferReadAt(int64(dh.Pos_Data_Dictionary_Header())+52, 4))
+	dh.Unused_space = uint64(BufferReadAt(dh.Page, int64(dh.Pos_Data_Dictionary_Header())+52, 4))
 	dh.Fseg = 4 //先不处理
 	var indexes = Dict_Index{sys_table, sys_column, sys_indexes, sys_field}
 	dh.Indexes = indexes

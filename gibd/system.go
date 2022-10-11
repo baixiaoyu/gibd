@@ -14,23 +14,23 @@ func NewSystem(filenames []string) *System {
 
 	space := NewSpace(filenames)
 	system.spaces = make(map[uint64]*Space)
-	system.spaces[space.space_id] = space
+	system.spaces[space.Space_id] = space
 	system.Add_Space_File(filenames)
 	system.data_dictionary = NewDataDictionary(system)
 	return system
 }
 func (system *System) Add_Space(space *Space) {
-	system.spaces[space.space_id] = space
+	system.spaces[space.Space_id] = space
 }
 func (system *System) Add_Space_File(space_filenames []string) {
 	space := NewSpace(space_filenames)
-	space.innodb_system = system
+	space.Innodb_system = system
 	system.Add_Space(space)
 }
 
 func (system *System) System_Space() *Space {
 	for _, value := range system.spaces {
-		if value.innodb_system != nil {
+		if value.Innodb_system != nil {
 			return value
 		}
 	}

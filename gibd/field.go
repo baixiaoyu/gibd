@@ -188,10 +188,10 @@ func (rf *RecordField) extern(offset int64, index *Index, record *UserRecord) *E
 }
 
 func (rf *RecordField) Read_Extern(offset int64, index *Index) *ExternReference {
-	space_id := index.Page.BufferReadAt(offset, 4)
-	page_number := index.Page.BufferReadAt(offset+4, 4)
-	e_offset := index.Page.BufferReadAt(offset+8, 4)
-	length := index.Page.BufferReadAt(offset+12, 8) & 0x3fffffff
+	space_id := BufferReadAt(index.Page, offset, 4)
+	page_number := BufferReadAt(index.Page, offset+4, 4)
+	e_offset := BufferReadAt(index.Page, offset+8, 4)
+	length := BufferReadAt(index.Page, offset+12, 8) & 0x3fffffff
 	return NewExternReference(uint64(space_id), uint64(page_number), uint64(e_offset), uint64(length))
 }
 
@@ -216,5 +216,5 @@ func (rf *RecordField) Has_Method(data_type interface{}, method_name string) boo
 
 func (rf *RecordField) Read(offset uint64, field_length int64, index *Index) []byte {
 
-	return (index.Page.ReadBytes(int64(offset), field_length))
+	return (ReadBytes(index.Page, int64(offset), field_length))
 }

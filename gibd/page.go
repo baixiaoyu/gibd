@@ -112,8 +112,8 @@ func NewPage(space *Space, buffer *[]byte, page_number uint64) *Page {
 		Buffer:      buffer,
 		Page_number: page_number,
 	}
-	p.Fil_Header()
-	p.Fil_Trailer()
+	// p.Fil_Header()
+	// p.Fil_Trailer()
 	return p
 
 }
@@ -172,10 +172,10 @@ func (p *Page) Page_Dump() {
 
 }
 
-func (p Page) String() string {
+func (p *Page) String() string {
 
-	page_offset := p.BufferReadAt(4, 4)
-	page_type := p.BufferReadAt(24, 2)
+	page_offset := BufferReadAt(p, 4, 4)
+	page_type := BufferReadAt(p, 24, 2)
 	res := "page: " + strconv.Itoa(page_offset) + ",type=" + PAGE_TYPE[page_type]
 	return res
 }
@@ -186,19 +186,20 @@ func (p *Page) Pos_Fil_Header() uint64 {
 
 func (p *Page) Fil_Header() {
 
-	p.FileHeader.Checksum = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header()), 4)) // 这个是checksum还是FIL_PAGE_SPACE
-	p.FileHeader.Offset = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+4, 4))
-	p.FileHeader.Prev = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+8, 4))
-	p.FileHeader.Next = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+12, 4))
-	p.FileHeader.Lsn = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+16, 8))
-	p.FileHeader.Page_type = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+24, 2))
-	p.FileHeader.Flush_lsn = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+26, 8))
-	p.FileHeader.Space_id = uint64(p.BufferReadAt(int64(p.Pos_Fil_Header())+34, 4))
+	p.FileHeader.Checksum = uint64(BufferReadAt(p, int64(p.Pos_Fil_Header()), 4)) // 这个是checksum还是FIL_PAGE_SPACE
+	p.FileHeader.Offset = uint64(BufferReadAt(p, int64(p.Pos_Fil_Header())+4, 4))
+	p.FileHeader.Prev = uint64(BufferReadAt(p, int64(p.Pos_Fil_Header())+8, 4))
+	p.FileHeader.Next = uint64(BufferReadAt(p, int64(p.Pos_Fil_Header())+12, 4))
+	p.FileHeader.Lsn = uint64(BufferReadAt(p, int64(p.Pos_Fil_Header())+16, 8))
+	p.FileHeader.Page_type = uint64(BufferReadAt(p, int64(p.Pos_Fil_Header())+24, 2))
+	p.FileHeader.Flush_lsn = uint64(BufferReadAt(p, int64(p.Pos_Fil_Header())+26, 8))
+	p.FileHeader.Space_id = uint64(BufferReadAt(p, int64(p.Pos_Fil_Header())+34, 4))
+
 }
 
 func (p *Page) Fil_Trailer() {
-	p.FileTrailer.Checksum = uint64(p.BufferReadAt(int64(p.Pos_Fil_Trailer()), 4))
-	p.FileTrailer.Lsn_low32 = uint64(p.BufferReadAt(int64(p.Pos_Fil_Trailer())+4, 4))
+	p.FileTrailer.Checksum = uint64(BufferReadAt(p, int64(p.Pos_Fil_Trailer()), 4))
+	p.FileTrailer.Lsn_low32 = uint64(BufferReadAt(p, int64(p.Pos_Fil_Trailer())+4, 4))
 }
 
 func (p *Page) Size_Fil_Header() uint64 { //38

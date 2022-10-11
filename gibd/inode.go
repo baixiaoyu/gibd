@@ -49,10 +49,10 @@ func Pos_List_Node() int64 {
 func (inode *Inode) ParseInodeBlock() {
 	pos := Pos_List_Node()
 	node := NewNode()
-	node.Prev_page = uint64(inode.Page.BufferReadAt(pos, 4))
-	node.Prev_offset = uint64(inode.Page.BufferReadAt(pos+4, 2))
-	node.Next_page = uint64(inode.Page.BufferReadAt(pos+6, 4))
-	node.Next_offset = uint64(inode.Page.BufferReadAt(pos+10, 2))
+	node.Prev_page = uint64(BufferReadAt(inode.Page, pos, 4))
+	node.Prev_offset = uint64(BufferReadAt(inode.Page, pos+4, 2))
+	node.Next_page = uint64(BufferReadAt(inode.Page, pos+6, 4))
+	node.Next_offset = uint64(BufferReadAt(inode.Page, pos+10, 2))
 	inode.Lnode = node
 
 	pos = 50
@@ -63,36 +63,36 @@ func (inode *Inode) ParseInodeBlock() {
 		notFullListBaseNode := NewBaseNode()
 		fullListBaseNode := NewBaseNode()
 
-		nodeEntry.Fseg_id = uint64(inode.Page.BufferReadAt(pos, 8))
-		nodeEntry.N_page_in_not_full = uint64(inode.Page.BufferReadAt(pos+8, 4))
+		nodeEntry.Fseg_id = uint64(BufferReadAt(inode.Page, pos, 8))
+		nodeEntry.N_page_in_not_full = uint64(BufferReadAt(inode.Page, pos+8, 4))
 
-		freeListBaseNode.ListLen = uint64(inode.Page.BufferReadAt(pos+12, 4))
-		freeListBaseNode.First_page = uint64(inode.Page.BufferReadAt(pos+16, 4))
-		freeListBaseNode.First_offset = uint64(inode.Page.BufferReadAt(pos+20, 2))
-		freeListBaseNode.Last_page = uint64(inode.Page.BufferReadAt(pos+22, 4))
-		freeListBaseNode.Last_offset = uint64(inode.Page.BufferReadAt(pos+26, 2))
+		freeListBaseNode.ListLen = uint64(BufferReadAt(inode.Page, pos+12, 4))
+		freeListBaseNode.First_page = uint64(BufferReadAt(inode.Page, pos+16, 4))
+		freeListBaseNode.First_offset = uint64(BufferReadAt(inode.Page, pos+20, 2))
+		freeListBaseNode.Last_page = uint64(BufferReadAt(inode.Page, pos+22, 4))
+		freeListBaseNode.Last_offset = uint64(BufferReadAt(inode.Page, pos+26, 2))
 
 		nodeEntry.Free = freeListBaseNode
-		notFullListBaseNode.ListLen = uint64(inode.Page.BufferReadAt(pos+28, 4))
-		notFullListBaseNode.First_page = uint64(inode.Page.BufferReadAt(pos+32, 4))
-		notFullListBaseNode.First_offset = uint64(inode.Page.BufferReadAt(pos+36, 2))
-		notFullListBaseNode.Last_page = uint64(inode.Page.BufferReadAt(pos+38, 4))
-		notFullListBaseNode.Last_offset = uint64(inode.Page.BufferReadAt(pos+42, 2))
+		notFullListBaseNode.ListLen = uint64(BufferReadAt(inode.Page, pos+28, 4))
+		notFullListBaseNode.First_page = uint64(BufferReadAt(inode.Page, pos+32, 4))
+		notFullListBaseNode.First_offset = uint64(BufferReadAt(inode.Page, pos+36, 2))
+		notFullListBaseNode.Last_page = uint64(BufferReadAt(inode.Page, pos+38, 4))
+		notFullListBaseNode.Last_offset = uint64(BufferReadAt(inode.Page, pos+42, 2))
 
 		nodeEntry.NotFull = notFullListBaseNode
 
-		fullListBaseNode.ListLen = uint64(inode.Page.BufferReadAt(pos+44, 4))
-		fullListBaseNode.First_page = uint64(inode.Page.BufferReadAt(pos+48, 4))
-		fullListBaseNode.First_offset = uint64(inode.Page.BufferReadAt(pos+52, 2))
-		fullListBaseNode.Last_page = uint64(inode.Page.BufferReadAt(pos+54, 4))
-		fullListBaseNode.Last_offset = uint64(inode.Page.BufferReadAt(pos+58, 2))
+		fullListBaseNode.ListLen = uint64(BufferReadAt(inode.Page, pos+44, 4))
+		fullListBaseNode.First_page = uint64(BufferReadAt(inode.Page, pos+48, 4))
+		fullListBaseNode.First_offset = uint64(BufferReadAt(inode.Page, pos+52, 2))
+		fullListBaseNode.Last_page = uint64(BufferReadAt(inode.Page, pos+54, 4))
+		fullListBaseNode.Last_offset = uint64(BufferReadAt(inode.Page, pos+58, 2))
 
 		nodeEntry.Full = fullListBaseNode
 
-		nodeEntry.Magic = uint64(inode.Page.BufferReadAt(pos+60, 4))
+		nodeEntry.Magic = uint64(BufferReadAt(inode.Page, pos+60, 4))
 
 		for j := int64(0); j < 32; j++ {
-			entry := uint64(inode.Page.BufferReadAt(pos+60+j*4, 4))
+			entry := uint64(BufferReadAt(inode.Page, pos+60+j*4, 4))
 			nodeEntry.FragArrayEntry[j] = *NewFragEntry(entry)
 
 		}

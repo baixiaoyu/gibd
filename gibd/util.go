@@ -72,7 +72,7 @@ func LoggerInit(logFile string) (log *logs.BeeLogger) {
 	return
 }
 
-func (p *Page) BufferReadAt(offset int64, size int64) int {
+func BufferReadAt(p *Page, offset int64, size int64) int {
 
 	byteStorage := make([]byte, size)
 	byteReader := bytes.NewReader(*p.Buffer)
@@ -82,7 +82,7 @@ func (p *Page) BufferReadAt(offset int64, size int64) int {
 
 }
 
-func (p *Page) BufferReadAtToSignInt(offset int64, size int64) int {
+func BufferReadAtToSignInt(p *Page, offset int64, size int64) int {
 
 	byteStorage := make([]byte, size)
 	byteReader := bytes.NewReader(*p.Buffer)
@@ -91,7 +91,7 @@ func (p *Page) BufferReadAtToSignInt(offset int64, size int64) int {
 	return BytesToIntLittleEndian(p, byteStorage)
 }
 
-func (p *Page) ReadBytes(offset int64, size int64) []byte {
+func ReadBytes(p *Page, offset int64, size int64) []byte {
 
 	byteStorage := make([]byte, size)
 	byteReader := bytes.NewReader(*p.Buffer)
@@ -354,3 +354,43 @@ func ParseMySQLInt(index *Index, bytes []byte) int {
 
 	return finalRes
 }
+
+func RemoveRepeatedElement(arr []uint64) (newArr []uint64) {
+	newArr = make([]uint64, 0)
+	for i := 0; i < len(arr); i++ {
+		repeat := false
+		for j := i + 1; j < len(arr); j++ {
+			if arr[i] == arr[j] {
+				repeat = true
+				break
+			}
+		}
+		if !repeat {
+			newArr = append(newArr, arr[i])
+		}
+	}
+	return
+}
+
+//获取结构体中字段的名称
+// func GetFieldName(columnName string, info FspHdrXdes) uint64 {
+
+// 	var val uint64
+// 	t := reflect.TypeOf(info)
+// 	if t.Kind() == reflect.Ptr {
+// 		t = t.Elem()
+// 	}
+// 	if t.Kind() != reflect.Struct {
+// 		fmt.Println("Check type error not Struct")
+// 		return 0
+// 	}
+// 	fieldNum := t.NumField()
+// 	for i := 0; i < fieldNum; i++ {
+// 		if strings.ToUpper(t.Field(i).Name) == strings.ToUpper(columnName) {
+// 			v := reflect.ValueOf(info)
+// 			val := v.FieldByName(t.Field(i).Name).Uint()
+// 			return val
+// 		}
+// 	}
+// 	return val
+// }

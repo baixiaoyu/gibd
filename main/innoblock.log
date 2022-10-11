@@ -1,0 +1,40 @@
+2022/10/11 16:00:34.054 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/11 16:00:34.054 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/11 16:00:34.054 [I] [index.go:308]  record_fields,key ==========<nil>
+
+2022/10/11 16:00:34.054 [I] [index.go:780]  supremum(),next=>112
+2022/10/11 16:00:34.054 [I] [index.go:780]  supremum(),next=>112
+2022/10/11 16:00:34.054 [I] [index.go:273]  each_record_size is ========>2
+
+2022/10/11 17:46:19.609 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/11 17:46:19.609 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Pages":6},"page_number":3}
+2022/10/11 17:46:19.609 [I] [index.go:308]  record_fields,key ==========<nil>
+
+2022/10/11 17:46:19.609 [I] [index.go:781]  supremum(),next=>112
+2022/10/11 17:46:19.610 [I] [index.go:781]  supremum(),next=>112
+2022/10/11 17:46:19.610 [I] [index.go:273]  each_record_size is ========>2
+
+2022/10/11 17:48:07.252 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Datafiles":[{}],"Size":98304,"Pages":6,"Name":"dba_user7.ibd","Space_id":0,"Innodb_system":null,"Record_describer":null},"page_number":3}
+2022/10/11 17:48:07.252 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Datafiles":[{}],"Size":98304,"Pages":6,"Name":"dba_user7.ibd","Space_id":0,"Innodb_system":null,"Record_describer":null},"page_number":3}
+2022/10/11 17:48:07.252 [I] [index.go:308]  record_fields,key ==========<nil>
+
+2022/10/11 17:48:07.253 [I] [index.go:781]  supremum(),next=>112
+2022/10/11 17:48:07.253 [I] [index.go:781]  supremum(),next=>112
+2022/10/11 17:48:07.253 [I] [index.go:273]  each_record_size is ========>2
+
+2022/10/11 17:51:37.988 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Datafiles":[{}],"Size":98304,"Pages":6,"Name":"dba_user7.ibd","Space_id":0,"Innodb_system":null,"Record_describer":null},"page_number":3}
+2022/10/11 17:51:37.989 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Datafiles":[{}],"Size":98304,"Pages":6,"Name":"dba_user7.ibd","Space_id":0,"Innodb_system":null,"Record_describer":null},"page_number":3}
+2022/10/11 17:51:37.989 [I] [index.go:308]  record_fields,key ==========<nil>
+
+2022/10/11 17:51:37.989 [I] [index.go:781]  supremum(),next=>112
+2022/10/11 17:51:37.989 [I] [index.go:781]  supremum(),next=>112
+2022/10/11 17:51:37.989 [I] [index.go:273]  each_record_size is ========>2
+
+2022/10/11 18:58:50.390 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Datafiles":[{}],"Size":98304,"Pages":6,"Name":"dba_user7.ibd","Space_id":542,"Innodb_system":null,"Record_describer":null,"IsSystemSpace":false},"page_number":3}
+2022/10/11 18:58:50.390 [I] [index.go:168]  page_header=========>{"address":{"pageno":0},"fileheader":{"checksum":758198083,"offset":3,"prev":4294967295,"next":4294967295,"lsn":58563975641,"page_type":17855,"flush_lsn":0,"space_id":542},"filetrailer":{"checksum":758198083,"lsn_low32":2729400793},"region":{},"space":{"Datafiles":[{}],"Size":98304,"Pages":6,"Name":"dba_user7.ibd","Space_id":542,"Innodb_system":null,"Record_describer":null,"IsSystemSpace":false},"page_number":3}
+2022/10/11 18:58:50.390 [I] [index.go:308]  record_fields,key ==========<nil>
+
+2022/10/11 18:58:50.390 [I] [index.go:781]  supremum(),next=>112
+2022/10/11 18:58:50.391 [I] [index.go:781]  supremum(),next=>112
+2022/10/11 18:58:50.391 [I] [index.go:273]  each_record_size is ========>2
+

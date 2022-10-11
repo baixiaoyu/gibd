@@ -2,12 +2,13 @@ package gibd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"strconv"
-	"strings"
+
+	"github.com/tidwall/pretty"
 )
 
 type DataFile struct {
@@ -30,20 +31,22 @@ func NewDataFile(filename string, offset uint64) *DataFile {
 }
 
 type Space struct {
-	datafiles        []*DataFile
-	size             uint64
+	Datafiles        []*DataFile
+	Size             uint64
 	Pages            uint64
-	name             string
-	space_id         uint64
-	innodb_system    *System
-	record_describer interface{}
+	Name             string
+	Space_id         uint64
+	Innodb_system    *System
+	Record_describer interface{}
+	IsSystemSpace    bool
 }
 
 func NewSpace(filenames []string) *Space {
 	var size uint64
+
 	datafiles := []*DataFile{}
 	size = 0
-	// innodb_system := false
+
 	var name string
 	for _, value := range filenames {
 		file := NewDataFile(value, size)
@@ -55,12 +58,20 @@ func NewSpace(filenames []string) *Space {
 	// if strings.Contains(name, "ibdata") {
 	// 	innodb_system = true
 	// }
-	return &Space{
-		size:      size,
-		datafiles: datafiles,
+
+	s := &Space{
+		Size:      size,
+		Datafiles: datafiles,
 		Pages:     pages,
-		name:      name,
+		Name:      name,
+		// Space_id:  spaceId,
 	}
+	page := s.Page(3)
+	page.Fil_Header()
+	s.Space_id = page.FileHeader.Space_id
+	s.IsSystemSpace = Is_System_Space(s)
+
+	return s
 }
 
 // func (s *Space) Page_Fsp_Hdr() uint64 {
@@ -76,32 +87,9 @@ func NewSpace(filenames []string) *Space {
 
 // }
 
-//获取结构体中字段的名称
-func GetFieldName(columnName string, info FspHdrXdes) uint64 {
-
-	var val uint64
-	t := reflect.TypeOf(info)
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-	if t.Kind() != reflect.Struct {
-		fmt.Println("Check type error not Struct")
-		return 0
-	}
-	fieldNum := t.NumField()
-	for i := 0; i < fieldNum; i++ {
-		if strings.ToUpper(t.Field(i).Name) == strings.ToUpper(columnName) {
-			v := reflect.ValueOf(info)
-			val := v.FieldByName(t.Field(i).Name).Uint()
-			return val
-		}
-	}
-	return val
-}
-
 func (s *Space) Get_Space_Id() uint64 {
 
-	return s.space_id
+	return s.Space_id
 	// fsp := s.Fsp()
 
 	// return fsp.FspHeader.Space_id
@@ -113,24 +101,8 @@ func (s *Space) Index(root_page_number uint64, record_describer interface{}) *BT
 	return NewBTreeIndex(s, root_page_number, record_describer)
 }
 
-func RemoveRepeatedElement(arr []uint64) (newArr []uint64) {
-	newArr = make([]uint64, 0)
-	for i := 0; i < len(arr); i++ {
-		repeat := false
-		for j := i + 1; j < len(arr); j++ {
-			if arr[i] == arr[j] {
-				repeat = true
-				break
-			}
-		}
-		if !repeat {
-			newArr = append(newArr, arr[i])
-		}
-	}
-	return
-}
-
 func (s *Space) Each_Index() []*BTreeIndex {
+	//普通用户表空间一般只有一个index，如果没有设置参数，可能都放到系统表空间
 	var indexes []*BTreeIndex
 	root_pages := RemoveRepeatedElement(s.Each_Index_Root_Page_Number())
 	Log.Info("eache_index all_root_page_number=========>%+v", root_pages)
@@ -141,13 +113,13 @@ func (s *Space) Each_Index() []*BTreeIndex {
 
 }
 
-//获取表空间所有index的
+//获取表空间所有index的root page number
 func (s *Space) Each_Index_Root_Page_Number() []uint64 {
 	var root_page_numer []uint64
-	if s.innodb_system != nil {
+	if s.Innodb_system != nil {
 		//s.innodb_system.data_dictionary.each_index_by_space_id(s.get_space_id())
 		//data_dict := s.innodb_system.
-		for _, value := range s.innodb_system.data_dictionary.each_index_by_space_id(s.Get_Space_Id()) {
+		for _, value := range s.Innodb_system.data_dictionary.each_index_by_space_id(s.Get_Space_Id()) {
 			page_no := uint64(value["PAGE_NO"].(int64))
 			root_page_numer = append(root_page_numer, page_no)
 		}
@@ -159,7 +131,7 @@ func (s *Space) data_file_for_offset(offset uint64) *DataFile {
 	var i uint64
 	i = 1
 
-	for _, file := range s.datafiles {
+	for _, file := range s.Datafiles {
 		if (i * file.size) < offset {
 			i = i + 1
 			continue
@@ -203,19 +175,23 @@ func (s *Space) Page(page_number uint64) *Page {
 }
 
 func (s *Space) Data_Dictionary_Page() *Page {
-	if s.Is_System_Space() {
+	if Is_System_Space(s) {
 		return s.Page(7)
 	}
 	return nil
 }
 
 func (Space Space) String() string {
-	res := "space: " + Space.name + ",pages=" + strconv.FormatUint(Space.Pages, 10)
+	res := "space: " + Space.Name + ",pages=" + strconv.FormatUint(Space.Pages, 10)
 	return res
 }
 
-func (s *Space) Is_System_Space() bool {
+func Is_System_Space(s *Space) bool {
 
+	if s.Space_id == 0 {
+		return true
+	}
+	return false
 	//_bytes = getData(file, 24, 2)
 	offset := 24 + (0 * DEFAULT_PAGE_SIZE)
 	fsp_hdr := s.Read_At_Offset(uint64(offset), 2)
@@ -253,4 +229,12 @@ func (s *Space) Is_System_Space() bool {
 		return true
 	}
 	return false
+}
+
+func (s *Space) Dump() {
+	println("space:")
+
+	data, _ := json.Marshal(s)
+	outStr := pretty.Pretty(data)
+	fmt.Printf("%s\n", outStr)
 }

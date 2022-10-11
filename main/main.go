@@ -100,7 +100,6 @@ func main() {
 	case "page-dump":
 		space := gibd.NewSpace(file_arr)
 		page := space.Page(uint64(page_no))
-
 		page.Page_Dump()
 
 	default:

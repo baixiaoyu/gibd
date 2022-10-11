@@ -76,7 +76,7 @@ func NewTransactionIdType(base_type string, modifiers string, properties string)
 }
 
 func (t *TransactionIdType) Read(offset uint64, p *Page) uint64 {
-	transaction_id := uint64(p.BufferReadAt(int64(offset), 6))
+	transaction_id := uint64(BufferReadAt(p, int64(offset), 6))
 	return transaction_id
 }
 

@@ -167,18 +167,18 @@ func (index *Index) Page_Header() {
 	jsons, _ := json.Marshal(index.Page)
 	Log.Info("page_header=========>%s", string(jsons))
 
-	n_dir_slots := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header()), 2))
-	heap_top := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+2, 2))
-	n_heap_format := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+4, 2))
-	garbage_offset := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+6, 2))
-	garbage_size := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+8, 2))
-	last_insert_offset := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+10, 2))
-	direction := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+12, 2))
-	n_direction := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+14, 2))
-	n_recs := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+16, 2))
-	max_trx_id := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+18, 8))
-	level := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+26, 2))
-	index_id := uint64(index.Page.BufferReadAt(int64(index.Pos_Index_Header())+28, 8))
+	n_dir_slots := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header()), 2))
+	heap_top := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+2, 2))
+	n_heap_format := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+4, 2))
+	garbage_offset := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+6, 2))
+	garbage_size := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+8, 2))
+	last_insert_offset := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+10, 2))
+	direction := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+12, 2))
+	n_direction := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+14, 2))
+	n_recs := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+16, 2))
+	max_trx_id := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+18, 8))
+	level := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+26, 2))
+	index_id := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+28, 8))
 
 	page_header := PageHeader{N_dir_slots: n_dir_slots, Heap_top: heap_top, N_heap_format: n_heap_format,
 		Garbage_offset: garbage_offset, Garbage_size: garbage_size, Last_insert_offset: last_insert_offset,
@@ -199,18 +199,18 @@ func (index *Index) Fseg_Header() {
 	//get fseg header,put them together,index的叶子和非叶子节点使用的是2个segment管理
 	// pos 74开始
 	pos := int64(index.Pos_Fseg_Header())
-	inodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4)) //leaf inode
+	inodeSpaceId := uint64(BufferReadAt(index.Page, pos, 4)) //leaf inode
 	pos = pos + 4
-	inodePageNumer := uint64(index.Page.BufferReadAt(pos, 4))
+	inodePageNumer := uint64(BufferReadAt(index.Page, pos, 4))
 	pos = pos + 4
-	inodeOffset := uint64(index.Page.BufferReadAt(pos, 2))
+	inodeOffset := uint64(BufferReadAt(index.Page, pos, 2))
 	pos = pos + 2
 
-	nonLeafInodeSpaceId := uint64(index.Page.BufferReadAt(pos, 4)) //none leaf inode
+	nonLeafInodeSpaceId := uint64(BufferReadAt(index.Page, pos, 4)) //none leaf inode
 	pos = pos + 4
-	nonLeafInodePageNumber := uint64(index.Page.BufferReadAt(pos, 4))
+	nonLeafInodePageNumber := uint64(BufferReadAt(index.Page, pos, 4))
 	pos = pos + 4
-	nonLeafInodeOffset := uint64(index.Page.BufferReadAt(pos, 2))
+	nonLeafInodeOffset := uint64(BufferReadAt(index.Page, pos, 2))
 	pos = pos + 2
 
 	fsegHeader := NewFsegHeader()
@@ -231,7 +231,7 @@ func (index *Index) Page_Directory() {
 	numSlot := index.Directory_Slots()
 
 	for i := uint64(0); i < numSlot; i++ {
-		slot := uint64(index.Page.BufferReadAt(pos-2, 2))
+		slot := uint64(BufferReadAt(index.Page, pos-2, 2))
 		pos = pos - 2
 		fmt.Printf("page direcotry slot %d,:%v\n", i, slot)
 	}
@@ -386,31 +386,31 @@ func (index *Index) record(offset uint64) *Record {
 		fmt.Println("offset ", offset)
 		// cluster_key_fileds := (index.Page.BufferReadAt(int64(offset), 4))
 
-		bytes := index.Page.ReadBytes(int64(offset), 4)
+		bytes := ReadBytes(index.Page, int64(offset), 4)
 
 		cluster_key_filed := ParseMySQLInt(index, bytes)
 		fmt.Println("cluster key fileds ==", cluster_key_filed)
 
-		transaction_id := index.Page.BufferReadAt(int64(offset)+4, 6)
+		transaction_id := BufferReadAt(index.Page, int64(offset)+4, 6)
 
 		fmt.Println("transaction_id ==", transaction_id)
 
-		roll_pointer := index.Page.BufferReadAt(int64(offset)+10, 7)
+		roll_pointer := BufferReadAt(index.Page, int64(offset)+10, 7)
 		fmt.Println("roll pointer ==", roll_pointer)
 
-		username := index.Page.ReadBytes(int64(offset)+17, 2)
+		username := ReadBytes(index.Page, int64(offset)+17, 2)
 		fmt.Println(" value1==", string(username))
 
-		bytes = index.Page.ReadBytes(int64(offset)+19, 4)
+		bytes = ReadBytes(index.Page, int64(offset)+19, 4)
 		class := ParseMySQLInt(index, bytes)
 		fmt.Println(" value2==", (class))
 
-		bytes = index.Page.ReadBytes(int64(offset)+23, 4)
+		bytes = ReadBytes(index.Page, int64(offset)+23, 4)
 		account := ParseMySQLInt(index, bytes)
 
 		fmt.Println(" value3==", (account))
 
-		bytes = index.Page.ReadBytes(int64(offset)+29, 4)
+		bytes = ReadBytes(index.Page, int64(offset)+29, 4)
 		version := ParseMySQLInt(index, bytes)
 		fmt.Println(" value4==", (version))
 
@@ -455,7 +455,7 @@ func (index *Index) record(offset uint64) *Record {
 		this_record.sys = syss
 
 		if index.IsLeaf() == false {
-			this_record.Child_page_number = uint64(index.Page.BufferReadAt(int64(offset), 4))
+			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(offset), 4))
 			offset = offset + 4
 			rec_len += 4
 		}
@@ -578,6 +578,7 @@ func Restruct_Describer(a interface{}) map[string]interface{} {
 
 var fmap = make(map[int]string)
 
+// 记录描述符这应该重构下，放到记录那边去，描述符这有点混乱
 //只实现了系统表systable sysindex 的description
 func (index *Index) Make_Record_Description() map[string]interface{} {
 	var position [1024]int
@@ -754,11 +755,11 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 }
 
 func (index *Index) Make_Record_Describer() interface{} {
-	if (index.Page.Space != nil) && (index.Page.Space.innodb_system != nil) && index.PageHeader.Index_id != 0 {
-		record_describer := index.Page.Space.innodb_system.data_dictionary.Record_Describer_By_Index_Id(index.PageHeader.Index_id)
+	if (index.Page.Space != nil) && (index.Page.Space.Innodb_system != nil) && index.PageHeader.Index_id != 0 {
+		record_describer := index.Page.Space.Innodb_system.data_dictionary.Record_Describer_By_Index_Id(index.PageHeader.Index_id)
 		return record_describer
 	} else if index.Page.Space != nil {
-		record_describer := index.Page.Space.record_describer
+		record_describer := index.Page.Space.Record_describer
 		return record_describer
 	}
 	return nil
@@ -785,7 +786,7 @@ func (index *Index) System_Record(offset uint64) *Record {
 
 	header, _ := index.Record_Header(offset)
 	// index.recordHeader = header
-	data := index.Page.ReadBytes(int64(offset), int64(index.Size_Mum_Record()))
+	data := ReadBytes(index.Page, int64(offset), int64(index.Size_Mum_Record()))
 	systemrecord := NewSystemRecord(offset, header, header.Next, data, 0)
 	record := NewRecord(index.Page, systemrecord)
 	return record
@@ -799,14 +800,14 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 	switch index.PageHeader.Format {
 	case "compact":
 		// 这个next是相对的offset, 需要加上当前的offset
-		header.Next = uint64(index.Page.BufferReadAtToSignInt(int64(offset)-2, 2)) + offset
+		header.Next = uint64(BufferReadAtToSignInt(index.Page, int64(offset)-2, 2)) + offset
 
-		bits1 := uint64(index.Page.BufferReadAt(int64(offset)-4, 2))
+		bits1 := uint64(BufferReadAt(index.Page, int64(offset)-4, 2))
 
 		header.Record_Type = RECORD_TYPES[bits1&0x07]
 		header.Heap_Number = (bits1 & 0xfff8) >> 3
 
-		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-5, 1))
+		bits2 := uint64(BufferReadAt(index.Page, int64(offset)-5, 1))
 		header.N_owned = bits2 & 0x0f
 		header.Info_flags = (bits2 & 0xf0) >> 4
 		//用户记录去查additional
@@ -818,9 +819,9 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 		header_len = 2 + 2 + 1 + 0 //0 代表record_header_compact_additional中处理记录
 
 	case "redundant":
-		header.Next = uint64(index.Page.BufferReadAt(int64(offset)-2, 2))
+		header.Next = uint64(BufferReadAt(index.Page, int64(offset)-2, 2))
 		//bytes := index.Page.readbytes(int64(offset)-2, 2)
-		bits1 := uint64(index.Page.BufferReadAt(int64(offset)-5, 3))
+		bits1 := uint64(BufferReadAt(index.Page, int64(offset)-5, 3))
 		if (bits1 & 1) == 0 {
 			header.Offset_size = 2
 		} else {
@@ -830,7 +831,7 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 		header.N_fields = (bits1 & (((1 << 10) - 1) << 1)) >> 1
 		header.Heap_Number = (bits1 & (((1 << 13) - 1) << 11)) >> 11
 
-		bits2 := uint64(index.Page.BufferReadAt(int64(offset)-6, 1))
+		bits2 := uint64(BufferReadAt(index.Page, int64(offset)-6, 1))
 		offset = offset - 6
 		header.N_owned = bits2 & 0x0f
 		header.Info_flags = (bits2 & 0xf0) >> 4
@@ -877,7 +878,7 @@ func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) string {
 	//size = fields.count(is_nullable())
 	//方便测试，将null bitmap和extern的信息放在了一起，默认测试分别占用1个字节。
 
-	nulls := index.Page.ReadBytes(int64(offset), 1)
+	nulls := ReadBytes(index.Page, int64(offset), 1)
 
 	nullString := BytesToBinaryString(nulls)
 	return nullString
@@ -976,7 +977,7 @@ func (index *Index) Record_Header_Redundant_Field_End_Offsets(header *RecordHead
 	field_offsets := []int{}
 	Log.Info("record_header_redundant_field_end_offsets offset 内容是==================>%v\n", offset)
 	for i := 0; i < int(header.N_fields); i++ {
-		field_offsets = append(field_offsets, index.Page.BufferReadAt(int64(offset)-1, int64(header.Offset_size)))
+		field_offsets = append(field_offsets, BufferReadAt(index.Page, int64(offset)-1, int64(header.Offset_size)))
 		Log.Info("record_header_redundant_field_end_offsets page number 是==================>%v\n", index.Page.Page_number)
 
 		Log.Info("record_header_redundant_field_end_offsets field_offsets 内容是==================>%v\n", field_offsets)
