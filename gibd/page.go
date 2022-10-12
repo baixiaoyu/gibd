@@ -112,8 +112,8 @@ func NewPage(space *Space, buffer *[]byte, page_number uint64) *Page {
 		Buffer:      buffer,
 		Page_number: page_number,
 	}
-	// p.Fil_Header()
-	// p.Fil_Trailer()
+	p.Fil_Header()
+	p.Fil_Trailer()
 	return p
 
 }
@@ -156,7 +156,7 @@ func (p *Page) Page_Dump() {
 	if p.FileHeader.Page_type == FIL_PAGE_INDEX {
 		//表空间从block 3开始是用户数据页
 		indexPage := NewIndex(p)
-		indexPage.Page_Header()
+		indexPage.Index_Header()
 		indexPage.Fseg_Header()
 
 		indexPage.Dump()

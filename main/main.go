@@ -53,9 +53,9 @@ type SYS struct {
 // }
 
 func Print_System_Spaces(innodb_system *gibd.System) {
-	//dd := newDataDictionary(innodb_system)
-	//dd.each_table()
+
 	btreeindexes := innodb_system.System_Space().Each_Index(innodb_system)
+	fmt.Println("++++++++++")
 	fmt.Printf("name\t,pages\t,btreeindexes\n")
 	fmt.Printf("%+v\t", "System")
 	fmt.Printf("%+v\t", innodb_system.System_Space().Pages)

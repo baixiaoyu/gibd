@@ -48,6 +48,14 @@ func NewRecordHeader(offset uint64) *RecordHeader {
 
 }
 
+func (rh *RecordHeader) Is_Min_Rec() bool {
+	return (rh.Info_flags & RECORD_INFO_MIN_REC_FLAG) != 0
+}
+
+func (rh *RecordHeader) Is_Deleted() bool {
+	return (rh.Info_flags & RECORD_INFO_DELETED_FLAG) != 0
+}
+
 type Record struct {
 	Page   *Page
 	record interface{} //UserRecord or SystemRecord

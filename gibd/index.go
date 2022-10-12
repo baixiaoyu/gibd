@@ -54,7 +54,7 @@ type Index struct {
 	FsegHeader       FsegHeader `json:"fsegheader"`
 	PageHeader       PageHeader `json:"pageheader"`
 	Space            *Space
-	record_describer interface{}
+	record_describer interface{} //这个跟record_format是什么关系？
 	root             *Page
 	size             uint64
 	Record_Format    map[string]interface{} `json:"recordformat"`
@@ -65,7 +65,7 @@ func NewIndex(page *Page) *Index {
 
 	index := &Index{Page: page}
 	index.Space = page.Space
-	index.Page_Header()
+	index.Index_Header()
 	return index
 }
 
@@ -164,9 +164,10 @@ func (index *Index) Space_Per_Record() uint64 {
 		return 0
 	}
 }
-func (index *Index) Page_Header() {
-	jsons, _ := json.Marshal(index.Page)
-	Log.Info("page_header=========>%s", string(jsons))
+
+// index_header
+func (index *Index) Index_Header() {
+	// jsons, _ := json.Marshal(index.Page)
 
 	n_dir_slots := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header()), 2))
 	heap_top := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+2, 2))
@@ -179,7 +180,7 @@ func (index *Index) Page_Header() {
 	n_recs := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+16, 2))
 	max_trx_id := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+18, 8))
 	level := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+26, 2))
-	index_id := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+28, 8))
+	index_id := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header())+28, 4))
 
 	page_header := PageHeader{N_dir_slots: n_dir_slots, Heap_top: heap_top, N_heap_format: n_heap_format,
 		Garbage_offset: garbage_offset, Garbage_size: garbage_size, Last_insert_offset: last_insert_offset,
@@ -238,10 +239,9 @@ func (index *Index) Page_Directory() {
 	}
 }
 
-func (index *Index) IsRoot() bool {
-	// return index.recordHeader.Prev == 0 && index.recordHeader.Next == 0
-	//上面的判断不准吧
-	return false
+func (index *Index) Is_Root() bool {
+	return index.Page.FileHeader.Prev == 0 && index.Page.FileHeader.Next == 0
+
 }
 
 func (index *Index) IsLeaf() bool {
@@ -306,7 +306,9 @@ func (index *Index) Max_Record() *Record {
 func (index *Index) Record_Fields() []*RecordField {
 	var res_arr []*RecordField
 
-	Log.Info("record_fields,key ==========%v\n", index.Record_Format["key"])
+	// Log.Info("record_fields,key ==========%v\n", index.Record_Format["key"])
+	// fmt.Printf("record_fields,key %v\n", index.Record_Format["key"])
+
 	//添加判断，如果没有record_format就是表示普通的表空间，普通表空间没有办法获取字段类型的
 	if index.Record_Format == nil {
 		return nil
@@ -315,15 +317,21 @@ func (index *Index) Record_Fields() []*RecordField {
 	for i := 0; i < len(key_arr); i++ {
 		res_arr = append(res_arr, key_arr[i])
 	}
-	Log.Info("record_fields,sys ==========%v\n", index.Record_Format["sys"])
-	sys_arr := index.Record_Format["sys"].([]*RecordField)
-	for i := 0; i < len(sys_arr); i++ {
-		res_arr = append(res_arr, sys_arr[i])
+	Log.Info("record_fields record_format ==========%v\n", index.Record_Format)
+	if index.Record_Format["sys"] != nil {
+		sys_arr := index.Record_Format["sys"].([]*RecordField)
+		for i := 0; i < len(sys_arr); i++ {
+			res_arr = append(res_arr, sys_arr[i])
+		}
 	}
+
 	Log.Info("record_fields,row ==========%v\n", index.Record_Format["row"])
-	row_arr := index.Record_Format["row"].([]*RecordField)
-	for i := 0; i < len(row_arr); i++ {
-		res_arr = append(res_arr, row_arr[i])
+	// fmt.Printf("record_fields,row %v\n", index.Record_Format["row"])
+	if index.Record_Format["row"] != nil {
+		row_arr := index.Record_Format["row"].([]*RecordField)
+		for i := 0; i < len(row_arr); i++ {
+			res_arr = append(res_arr, row_arr[i])
+		}
 	}
 
 	return res_arr
@@ -456,7 +464,9 @@ func (index *Index) record(offset uint64) *Record {
 		this_record.sys = syss
 
 		if index.IsLeaf() == false {
-			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(offset), 4))
+			//child_page_number是在最后的4个字节，前面是最小key的值,先写死
+			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(offset)+16, 4))
+			fmt.Println("child_page_number==", this_record.Child_page_number)
 			offset = offset + 4
 			rec_len += 4
 		}
@@ -586,7 +596,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 	for i := 0; i <= RECORD_MAX_N_FIELDS; i++ {
 		position[i] = i
 	}
-	description := index.Get_Record_Describer()
+	description := index.Get_Record_Describer() //用之前的描述符，更改下格式
 	fields := make(map[string]string)
 
 	var ruby_description map[string]interface{}
@@ -607,7 +617,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		var key_arr []*RecordField
 		for k, v := range ruby_description["key"].([]interface{}) {
 			//key_arr = []*Recordfield{}
-			Log.Info("index=%d", k, "value=%s", v)
+			Log.Info("index=%v", k, "value=%v", v)
 			value := v.(map[string]interface{})
 			prop := value["type"].([]interface{})
 			var properties string
@@ -642,7 +652,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		}
 
 		var row_arr []*RecordField
-		if (index.IsLeaf() && ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
+		if (ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
 			for _, v := range ruby_description["row"].([]interface{}) {
 				value := v.(map[string]interface{})
 				name := value["name"].(string)
@@ -663,7 +673,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			ruby_description["row"] = row_arr
 		}
 
-		Log.Info("make_record_description ruby_description:%s", ruby_description)
+		Log.Info("make_record_description_SysTablesPrimary ruby_description:%s", ruby_description)
 		// println("fmap")
 		// for k, v := range fmap {
 		// 	println(k)
@@ -672,17 +682,17 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		return ruby_description
 	case *SysIndexesPrimary:
 		description := description.(*SysIndexesPrimary)
-
+		fmt.Println("\n((( description:\n", description)
 		//转化成ruby那样的格式，统一下，要不后续不好处理
 		ruby_description = Restruct_Describer(*description)
-		Log.Info("ruby_description key 的内容是=======>%v\n", ruby_description["key"])
+		fmt.Printf("ruby_description  的内容是=======>%v\n", ruby_description)
 		var counter int
 		counter = 0
 
 		var key_arr []*RecordField
 		for k, v := range ruby_description["key"].([]interface{}) {
 
-			Log.Info("index=%d", k, "value=%s", v)
+			fmt.Printf("\nindex=%v ,value=%v\n", k, v)
 			value := v.(map[string]interface{})
 			prop := value["type"].([]interface{})
 			var properties string
@@ -701,8 +711,8 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 
 		ruby_description["key"] = key_arr
 
-		//ruby_description["type"] = description.TAB_TYPE
 		var sys_arr []*RecordField
+		// 叶子结点加上回滚段和事务id的值
 		if index.IsLeaf() && ruby_description["tab_type"] == "clustered" {
 
 			DB_TRX_ID := NewRecordField(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
@@ -718,7 +728,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		}
 
 		var row_arr []*RecordField
-		if (index.IsLeaf() && ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
+		if (ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
 			for _, v := range ruby_description["row"].([]interface{}) {
 				value := v.(map[string]interface{})
 				name := value["name"].(string)
@@ -739,7 +749,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			ruby_description["row"] = row_arr
 		}
 
-		Log.Info("make_record_description ruby_description:%s", ruby_description)
+		fmt.Printf("\nmake_record_description_SysIndexesPrimary ruby_description:%s\n", ruby_description)
 		// println("fmap")
 		// for k, v := range fmap {
 		// 	println(k)
@@ -856,6 +866,7 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 
 func (index *Index) Record_Header_Compact_Additional(header *RecordHeader, offset uint64) {
 	switch header.Record_Type {
+	// node_pointer 是中间节点记录 conventional 是正常的记录
 	case "conventional", "node_pointer":
 		// 变长部分，如果没有列的元数据信息，没法取长度，所以如果自己知道表信息，可以手工设置字节长度，在else中判断
 		if index.Record_Format != nil {
@@ -929,6 +940,7 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 	Log.Info("record_header_redundant_additional的 record_describer 内容是==================>%v\n", index.record_describer)
 
 	index.Record_Format = index.Get_Record_Format()
+
 	if index.Record_Format != nil {
 		header.Lengths = make(map[string]int)
 		header.Nulls = ""

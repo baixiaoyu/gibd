@@ -97,8 +97,8 @@ func (s *Space) Get_Space_Id() uint64 {
 	//return GetFieldName("space_id", *fsp)
 }
 
-func (s *Space) Index(root_page_number uint64, record_describer interface{}) *BTreeIndex {
-
+func (s *Space) Get_Index_Tree(root_page_number uint64, record_describer interface{}) *BTreeIndex {
+	fmt.Println("======root_page_number", root_page_number)
 	return NewBTreeIndex(s, root_page_number, record_describer)
 }
 
@@ -107,9 +107,11 @@ func (s *Space) Each_Index(innodb_system *System) []*BTreeIndex {
 	var indexes []*BTreeIndex
 	root_pages := RemoveRepeatedElement(s.Each_Index_Root_Page_Number(innodb_system))
 	Log.Info("eache_index all_root_page_number=========>%+v", root_pages)
-	for _, value := range root_pages {
-		indexes = append(indexes, s.Index(value, nil))
+	fmt.Println("!!!!!", len(root_pages))
+	for _, root := range root_pages {
+		indexes = append(indexes, s.Get_Index_Tree(root, nil))
 	}
+	fmt.Println("&&&&&&&&", len(indexes))
 	return indexes
 
 }
@@ -173,11 +175,10 @@ func (s *Space) Page(page_number uint64) *Page {
 	data := s.Page_Data(page_number)
 	page := NewPage(s, &data, page_number)
 	return page
-	// page := Page.parse(self, data, page_number)
 
 }
 
-func (s *Space) Data_Dictionary_Page() *Page {
+func (s *Space) Data_Dictionary_Header_Page() *Page {
 	if Is_System_Space(s) {
 		return s.Page(7)
 	}

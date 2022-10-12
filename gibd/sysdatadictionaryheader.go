@@ -8,14 +8,14 @@ import (
 )
 
 type SYS_TABLES struct {
-	PRIMARY uint64 `json:"primary"`
+	PRIMARY uint64 `json:"primary"` // root of sys_tables cluster index
 	ID      uint64 `json:"id"`
 }
 type SYS_COLUMNS struct {
-	PRIMARY uint64 `json:"primary"`
+	PRIMARY uint64 `json:"primary"` // Root of sys_columns clust index
 }
 type SYS_INDEXES struct {
-	PRIMARY uint64 `json:"primary"`
+	PRIMARY uint64 `json:"primary"` //root of sys_indexes clust index
 }
 type SYS_FIELDS struct {
 	PRIMARY uint64 `json:"primary"`
