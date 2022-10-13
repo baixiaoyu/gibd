@@ -84,9 +84,11 @@ func (tree *BTreeIndex) Min_Page_At_Level(level int) *Index {
 	for record != nil && root_index_page.PageHeader.Level > uint64(level) {
 		switch record.record.(type) {
 		case *UserRecord:
-			idx := tree.Page(record.record.(*UserRecord).Child_page_number)
+			child_page_number := record.record.(*UserRecord).Child_page_number
+			idx := tree.Page(child_page_number)
 			//这里不能这么给，叶节点和非叶节点是不同的
 			// idx.Record_Format = root_index_page.Record_Format
+			fmt.Println(idx.PageHeader.Index_id)
 			record = idx.Min_Record()
 			if idx.PageHeader.Level == uint64(level) {
 				return idx

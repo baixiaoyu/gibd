@@ -54,11 +54,11 @@ type Index struct {
 	FsegHeader       FsegHeader `json:"fsegheader"`
 	PageHeader       PageHeader `json:"pageheader"`
 	Space            *Space
-	record_describer interface{} //这个跟record_format是什么关系？
+	record_describer interface{} //这个跟record_format是什么关系？用来格式化Record_Format
 	root             *Page
 	size             uint64
-	Record_Format    map[string]interface{} `json:"recordformat"`
-	dh               *DataDictionary        //系统表空间的时候使用
+	Record_Format    map[string]interface{} `json:"recordformat"` // 这个用来描述字段信息，主要用来在解析的时候遇到字段变长信息的处理
+	dh               *DataDictionary        //系统表空间的时候使用，用来获取一些元信息，如果是普通的表空间，构造record_format即可
 }
 
 func NewIndex(page *Page) *Index {
