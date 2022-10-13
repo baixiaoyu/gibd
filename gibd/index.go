@@ -430,16 +430,14 @@ func (index *Index) record(offset uint64) *Record {
 		rows := []*FieldDescriptor{}
 		syss := []*FieldDescriptor{}
 
-		Log.Info("record() record.header.lengths=====>%+v\n", this_record.header.Lengths)
-
 		for i := 0; i < len(all_field); i++ {
 			f := all_field[i]
 			p := fmap[f.position]
 			//get value exception unkown data type===> &{ 0 false}
 			Log.Info("record() this_field_offset =========>%+v\n", offset)
 			filed_value, len := f.Value(offset, this_record, index)
-			Log.Info("record() recordfield name, datatype =====>%s, %s", f.name, f.data_type)
-			Log.Info("record() recordfield value =====>%s", filed_value)
+			fmt.Printf("record() recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
+			fmt.Printf("record() recordfield value =====>%v\n", filed_value)
 			offset = offset + len
 			var f_name string
 			switch f.data_type.(type) {

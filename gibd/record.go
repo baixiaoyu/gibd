@@ -73,7 +73,8 @@ func NewRecord2() *Record {
 	return &Record{}
 }
 
-func (record *Record) Get_Fields() map[string]interface{} {
+//获取列对应的值，放到map中
+func (record *Record) Get_Fields_And_Value_Map() map[string]interface{} {
 	fields_map := make(map[string]interface{})
 	keys := record.record.(*UserRecord).key
 	rows := record.record.(*UserRecord).row
@@ -139,6 +140,7 @@ func (s *UserRecord) String() string {
 		s.record_type, s.format, s.offset, s.next, s.Child_page_number, s.Transaction_id, s.Roll_pointer, s.Length)
 }
 
+// 列名以及对应的值
 type FieldDescriptor struct {
 	name       string
 	field_type string

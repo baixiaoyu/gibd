@@ -148,14 +148,14 @@ func NewDataDictionary(system *System) *DataDictionary {
 }
 func (dh *DataDictionary) Get_Each_Table_Name() []map[string]interface{} {
 	res := dh.Each_Record_From_Data_Dictionary_Index("SYS_TABLES", "PRIMARY")
-	var all_record_field []map[string]interface{}
+	var all_record_field_value_map []map[string]interface{}
 	for i := 0; i < len(res); i++ {
-		Log.Info("each_table each table======>%+v\n", res[i])
-		all_record_field = append(all_record_field, res[i].Get_Fields())
-	}
-	Log.Info("each_table=====>length is:%+v\n", len(all_record_field))
 
-	return all_record_field
+		all_record_field_value_map = append(all_record_field_value_map, res[i].Get_Fields_And_Value_Map())
+	}
+	fmt.Printf("each_table=====>length is:%+v\n", len(all_record_field_value_map))
+
+	return all_record_field_value_map
 }
 
 // "SYS_INDEXES", "PRIMARY"
@@ -166,7 +166,7 @@ func (dh *DataDictionary) Each_Index_Record_Field(tableName string, indexName st
 	var all_record_field []map[string]interface{}
 	for i := 0; i < len(res); i++ {
 		Log.Info("each_index each index======>%+v", res[i])
-		all_record_field = append(all_record_field, res[i].Get_Fields())
+		all_record_field = append(all_record_field, res[i].Get_Fields_And_Value_Map())
 	}
 	Log.Info("each_record_from_data_dictionary_index=====>all_record_field is:%+v", all_record_field)
 
