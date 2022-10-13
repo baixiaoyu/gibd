@@ -425,16 +425,19 @@ func (index *Index) record(offset uint64) *Record {
 
 		return NewRecord(index.Page, this_record)
 	} else {
-
+		record_offset := offset
 		keys := []*FieldDescriptor{}
 		rows := []*FieldDescriptor{}
 		syss := []*FieldDescriptor{}
 
+		//待修改，获取记录的值，这部分需要分叶子结点和非叶子结点分别处理，非叶子结点只需要获取key值即可
 		for i := 0; i < len(all_field); i++ {
 			f := all_field[i]
 			p := fmap[f.position]
 			//get value exception unkown data type===> &{ 0 false}
-			Log.Info("record() this_field_offset =========>%+v\n", offset)
+			fmt.Println("the page is", index.Page.Page_number)
+			fmt.Printf("record() this_field_offset =========>%+v\n", offset)
+			fmt.Printf("record() all_filed =========>%+v\n", f)
 			filed_value, len := f.Value(offset, this_record, index)
 			fmt.Printf("record() recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
 			fmt.Printf("record() recordfield value =====>%v\n", filed_value)
@@ -463,8 +466,9 @@ func (index *Index) record(offset uint64) *Record {
 
 		if index.IsLeaf() == false {
 			//child_page_number是在最后的4个字节，前面是最小key的值,先写死,这里key的信息需要在描述符中获取
-			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(offset)+16, 4))
-			// fmt.Println("child_page_number==", this_record.Child_page_number)
+			fmt.Println("offset==?", offset)
+			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(record_offset)+16, 4))
+			fmt.Println("child_page_number==?", this_record.Child_page_number)
 			offset = offset + 4
 			rec_len += 4
 		}
