@@ -112,6 +112,7 @@ func NewPage(space *Space, buffer *[]byte, page_number uint64) *Page {
 		Buffer:      buffer,
 		Page_number: page_number,
 	}
+
 	p.Fil_Header()
 	p.Fil_Trailer()
 	return p
@@ -119,8 +120,7 @@ func NewPage(space *Space, buffer *[]byte, page_number uint64) *Page {
 }
 
 func (p *Page) Page_Dump() {
-	println()
-	fmt.Println("fil header and tailer:")
+
 	p.Fil_Header()
 	p.Fil_Trailer()
 

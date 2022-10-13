@@ -132,7 +132,6 @@ var describer_struct_map = map[string]reflect.Type{
 
 func New(name string) (c interface{}, err error) {
 	if v, ok := describer_struct_map[name]; ok {
-		fmt.Println("vvvvvvv======", v)
 		c = reflect.New(v).Interface()
 	} else {
 		err = fmt.Errorf("not found %s struct", name)
@@ -147,7 +146,7 @@ type DataDictionary struct {
 func NewDataDictionary(system *System) *DataDictionary {
 	return &DataDictionary{system: system}
 }
-func (dh *DataDictionary) Each_Table() []map[string]interface{} {
+func (dh *DataDictionary) Get_Each_Table_Name() []map[string]interface{} {
 	res := dh.Each_Record_From_Data_Dictionary_Index("SYS_TABLES", "PRIMARY")
 	var all_record_field []map[string]interface{}
 	for i := 0; i < len(res); i++ {
@@ -160,10 +159,10 @@ func (dh *DataDictionary) Each_Table() []map[string]interface{} {
 }
 
 // "SYS_INDEXES", "PRIMARY"
-func (dh *DataDictionary) Each_Index_Recor_Field(tableName string, indexName string) []map[string]interface{} {
+func (dh *DataDictionary) Each_Index_Record_Field(tableName string, indexName string) []map[string]interface{} {
 
 	res := dh.Each_Record_From_Data_Dictionary_Index(tableName, indexName)
-	fmt.Printf("res %v", res)
+	// fmt.Printf("res %v\n", res)
 	var all_record_field []map[string]interface{}
 	for i := 0; i < len(res); i++ {
 		Log.Info("each_index each index======>%+v", res[i])
@@ -178,7 +177,6 @@ func (dh *DataDictionary) Each_Record_From_Data_Dictionary_Index(table string, i
 
 	// root index tree
 	rootindex := dh.Get_Data_Dictionary_Index_Tree(table, index)
-	fmt.Printf("each_record_from_data_dictionary_index rootindex========>%+v\n", rootindex)
 
 	records := rootindex.Each_Record(dh)
 	// 对返回的每个记录进行处理
@@ -262,9 +260,8 @@ func (dh *DataDictionary) Data_Dictionary_Index_Describer(table_name string, ind
 	if dh.Is_Data_Dictionary_Index(table_name, index_name) {
 
 		class_name := DATA_DICTIONARY_RECORD_DESCRIBERS[table_name][index_name]
-		fmt.Printf("data_dictionary_index_describer get index describer======>%+v\n", class_name)
 		cls, _ := New(class_name)
-		fmt.Println("#####", cls)
+
 		return cls
 	}
 	return nil
@@ -276,11 +273,9 @@ func (dh *DataDictionary) Get_Data_Dictionary_Index_Tree(table_name string, inde
 	var index_root_page uint64
 	if table_name == "SYS_TABLES" {
 		table_entry := dh.data_dictionary_indexes().SYS_TABLES
-		fmt.Printf("in data_dictionary_index, table_entry ========>%+v\n", table_entry.PRIMARY)
 		index_root_page = table_entry.PRIMARY
 	} else if table_name == "SYS_INDEXES" {
 		table_entry := dh.data_dictionary_indexes().SYS_INDEXES
-		fmt.Printf("in data_dictionary_index, table_entry ========>%+v\n", table_entry.PRIMARY)
 		index_root_page = table_entry.PRIMARY
 	}
 
@@ -290,8 +285,6 @@ func (dh *DataDictionary) Get_Data_Dictionary_Index_Tree(table_name string, inde
 	//index_root_page := res
 
 	record_describer := dh.Data_Dictionary_Index_Describer(table_name, index_name)
-
-	fmt.Printf("^^^^^^^^^%v", record_describer)
 
 	switch value := record_describer.(type) {
 	case *SysTablesPrimary:
@@ -321,8 +314,8 @@ func (dh *DataDictionary) data_dictionary_indexes() Dict_Index {
 	return header.Indexes
 }
 
-func (dh *DataDictionary) each_index_by_space_id(space_id uint64) []map[string]interface{} {
-	all_record_field := dh.Each_Index_Recor_Field("SYS_INDEXES", "PRIMARY")
+func (dh *DataDictionary) Each_Index_By_Space_Id(space_id uint64) []map[string]interface{} {
+	all_record_field := dh.Each_Index_Record_Field("SYS_INDEXES", "PRIMARY")
 	var records []map[string]interface{}
 	//根据上面返回的每个记录进行sapce的匹配，匹配的话输出
 	Log.Info("each_index_by_space_id() space_id =======>%+v\n", space_id)

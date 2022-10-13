@@ -10,7 +10,8 @@
             "request": "launch",
             "mode": "debug",
             "program": "/Users/xiaoyu.bai/go/src/gibd/main/main.go",
-            "args": ["-s", "dba_user7.ibd", "-p", "3", "-m", "page-dump"],
+            // "args": ["-s", "dba_user7.ibd", "-p", "3", "-m", "page-dump"],
+            "args": ["-s", "ibdata1",  "-m", "system-spaces"],
             "env": {
                 "GO111MODULE":"on"
             }

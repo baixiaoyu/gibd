@@ -45,7 +45,7 @@ func (system *System) System_Space() *Space {
 
 func (system *System) Each_Table_Name() []string {
 	var table_names []string
-	tables := system.data_dictionary.Each_Table()
+	tables := system.data_dictionary.Get_Each_Table_Name()
 	for _, value := range tables {
 		Log.Info("each_table_name===%+v\n", value["NAME"])
 		table_names = append(table_names, value["NAME"].(string))

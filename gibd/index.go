@@ -464,9 +464,9 @@ func (index *Index) record(offset uint64) *Record {
 		this_record.sys = syss
 
 		if index.IsLeaf() == false {
-			//child_page_number是在最后的4个字节，前面是最小key的值,先写死
+			//child_page_number是在最后的4个字节，前面是最小key的值,先写死,这里key的信息需要在描述符中获取
 			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(offset)+16, 4))
-			fmt.Println("child_page_number==", this_record.Child_page_number)
+			// fmt.Println("child_page_number==", this_record.Child_page_number)
 			offset = offset + 4
 			rec_len += 4
 		}
@@ -635,7 +635,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 
 		ruby_description["key"] = key_arr
 
-		//ruby_description["type"] = description.TAB_TYPE
+		//叶子结点加上系统字段
 		var sys_arr []*RecordField
 		if index.IsLeaf() && ruby_description["tab_type"] == "clustered" {
 
@@ -682,17 +682,16 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		return ruby_description
 	case *SysIndexesPrimary:
 		description := description.(*SysIndexesPrimary)
-		fmt.Println("\n((( description:\n", description)
+		Log.Info("description:\n", description)
 		//转化成ruby那样的格式，统一下，要不后续不好处理
 		ruby_description = Restruct_Describer(*description)
-		fmt.Printf("ruby_description  的内容是=======>%v\n", ruby_description)
+		Log.Info("ruby_description  的内容是=======>%v\n", ruby_description)
 		var counter int
 		counter = 0
 
 		var key_arr []*RecordField
-		for k, v := range ruby_description["key"].([]interface{}) {
+		for _, v := range ruby_description["key"].([]interface{}) {
 
-			fmt.Printf("\nindex=%v ,value=%v\n", k, v)
 			value := v.(map[string]interface{})
 			prop := value["type"].([]interface{})
 			var properties string
@@ -749,7 +748,6 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			ruby_description["row"] = row_arr
 		}
 
-		fmt.Printf("\nmake_record_description_SysIndexesPrimary ruby_description:%s\n", ruby_description)
 		// println("fmap")
 		// for k, v := range fmap {
 		// 	println(k)
@@ -859,7 +857,7 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 	data, _ := json.Marshal(header)
 	outStr := pretty.Pretty(data)
 
-	fmt.Printf("record header: %s\n", outStr)
+	Log.Info("record header: %s\n", outStr)
 
 	return header, header_len
 }
@@ -888,7 +886,7 @@ func (index *Index) Record_Header_Compact_Additional(header *RecordHeader, offse
 func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) string {
 	//fields := index.record_fields()
 	//size = fields.count(is_nullable())
-	//方便测试，将null bitmap和extern的信息放在了一起，默认测试分别占用1个字节。
+	//方便测试，将null bitmap和extern的信息放在了一起，默认测试分别占用1个字节，根据具体情况修改，因为没有字段元数据信息
 
 	nulls := ReadBytes(index.Page, int64(offset), 1)
 
@@ -946,8 +944,6 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 		header.Nulls = ""
 		header.Externs = ""
 		all_fields := index.Record_Fields()
-		Log.Info("record_header_redundant_additional的 all_fields 内容是==================>%v\n", len(all_fields))
-		Log.Info("record_header_redundant_additional的 field_offset 长度是==================>%v\n", len(field_offsets))
 		for i := 0; i < len(all_fields); i++ {
 			f := all_fields[i]
 			if f.position >= len(lengths) {

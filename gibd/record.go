@@ -74,22 +74,22 @@ func NewRecord2() *Record {
 }
 
 func (record *Record) Get_Fields() map[string]interface{} {
-	fields_hash := make(map[string]interface{})
+	fields_map := make(map[string]interface{})
 	keys := record.record.(*UserRecord).key
 	rows := record.record.(*UserRecord).row
 
 	for _, value := range keys {
 		Log.Info("get_fields() keys name====>%+v\n", value.name)
 		Log.Info("get_fields() keys value====>%+v\n", value.value)
-		fields_hash[value.name] = value.value
+		fields_map[value.name] = value.value
 	}
 
 	for _, value := range rows {
 		Log.Info("get_fields() rows name====>%+v\n", value.name)
 		Log.Info("get_fields() rows value====>%+v\n", value.value)
-		fields_hash[value.name] = value.value
+		fields_map[value.name] = value.value
 	}
-	return fields_hash
+	return fields_map
 
 }
 

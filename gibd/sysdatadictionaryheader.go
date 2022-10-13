@@ -37,7 +37,7 @@ type SysDataDictionaryHeader struct {
 	Indexes           Dict_Index `json:"indexes"`
 	Unused_space      uint64     `json:"unused_space"`
 	Fseg              uint64     `json:"fseg"`
-	Page              *Page      `json:"-"`
+	Page              *Page      `json:"page"`
 }
 
 func NewSysDataDictionaryHeader(p *Page) *SysDataDictionaryHeader {
