@@ -430,7 +430,7 @@ func (index *Index) record(offset uint64) *Record {
 		rows := []*FieldDescriptor{}
 		syss := []*FieldDescriptor{}
 
-		//待修改，获取记录的值，这部分需要分叶子结点和非叶子结点分别处理，非叶子结点只需要获取key值即可
+		//待修改，获取记录的值，这部分需要分叶子结点和非叶子结点分别处理，非叶子结点只需要获取key值即可,或许这里加个判断，可以不用输出非叶子结点的值，我们目的是获取child_page_number
 		for i := 0; i < len(all_field); i++ {
 			f := all_field[i]
 			p := fmap[f.position]
