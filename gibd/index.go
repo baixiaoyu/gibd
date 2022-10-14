@@ -303,7 +303,7 @@ func (index *Index) Max_Record() *Record {
 
 }
 
-func (index *Index) Record_Fields() []*RecordField {
+func (index *Index) Get_Record_Fields_From_Format() ([]*RecordField, []*RecordField, []*RecordField) {
 	var res_arr []*RecordField
 
 	// Log.Info("record_fields,key ==========%v\n", index.Record_Format["key"])
@@ -311,7 +311,7 @@ func (index *Index) Record_Fields() []*RecordField {
 
 	//添加判断，如果没有record_format就是表示普通的表空间，普通表空间没有办法获取字段类型的
 	if index.Record_Format == nil {
-		return nil
+		return nil, nil, nil
 	}
 	key_arr := index.Record_Format["key"].([]*RecordField)
 	for i := 0; i < len(key_arr); i++ {
@@ -326,6 +326,7 @@ func (index *Index) Record_Fields() []*RecordField {
 	}
 
 	Log.Info("record_fields,row ==========%v\n", index.Record_Format["row"])
+	row_arr := index.Record_Format["row"].([]*RecordField)
 	// fmt.Printf("record_fields,row %v\n", index.Record_Format["row"])
 	if index.Record_Format["row"] != nil {
 		row_arr := index.Record_Format["row"].([]*RecordField)
@@ -334,7 +335,7 @@ func (index *Index) Record_Fields() []*RecordField {
 		}
 	}
 
-	return res_arr
+	return res_arr, key_arr, row_arr
 
 }
 
@@ -372,7 +373,7 @@ func (index *Index) record(offset uint64) *Record {
 
 		this_record.record_type = rf["tab_type"].(string)
 	}
-	all_field := index.Record_Fields()
+	all_field, key_arr, row_arr := index.Get_Record_Fields_From_Format()
 	if all_field == nil {
 		//没有字段元数据的时候，获取下记录的长度的准确值
 		// 为了测试方便，我们使用固定的表结构
@@ -430,42 +431,73 @@ func (index *Index) record(offset uint64) *Record {
 		rows := []*FieldDescriptor{}
 		syss := []*FieldDescriptor{}
 
+		fmt.Println("all_field", all_field)
 		//待修改，获取记录的值，这部分需要分叶子结点和非叶子结点分别处理，非叶子结点只需要获取key值即可,或许这里加个判断，可以不用输出非叶子结点的值，我们目的是获取child_page_number
-		for i := 0; i < len(all_field); i++ {
-			f := all_field[i]
-			p := fmap[f.position]
-			//get value exception unkown data type===> &{ 0 false}
-			fmt.Println("the page is", index.Page.Page_number)
-			fmt.Printf("record() this_field_offset =========>%+v\n", offset)
-			fmt.Printf("record() all_filed =========>%+v\n", f)
-			filed_value, len := f.Value(offset, this_record, index)
-			fmt.Printf("record() recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
-			fmt.Printf("record() recordfield value =====>%v\n", filed_value)
-			offset = offset + len
-			var f_name string
-			switch f.data_type.(type) {
-			case *TransactionIdType:
-				f_name = f.data_type.(*TransactionIdType).name
-			case *IntegerType:
-				f_name = f.data_type.(*IntegerType).name
-			}
-			fieldDescriptor := NewFieldDescriptor(f.name, f_name, filed_value, f.extern(int64(offset), index, this_record))
-			switch p {
-			case "key":
-				keys = append(keys, fieldDescriptor)
-			case "row":
-				rows = append(rows, fieldDescriptor)
-			case "sys":
-				syss = append(syss, fieldDescriptor)
+		if index.IsLeaf() == true {
+			//先获取key字段，然后是transaction id 然后是roll pointer 然后是non-key字段
+			for i := 0; i < len(key_arr); i++ {
+
 			}
 
+			for i := 0; i < len(all_field); i++ {
+				f := all_field[i]
+				p := fmap[f.position]
+				//get value exception unkown data type===> &{ 0 false}
+				fmt.Println("the page is", index.Page.Page_number)
+				fmt.Printf("record() this_field_offset =========>%+v\n", offset)
+				fmt.Printf("record() all_filed =========>%+v\n", f)
+				filed_value, len := f.Value(offset, this_record, index)
+				fmt.Printf("record() recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
+				fmt.Printf("record() recordfield value =====>%v\n", filed_value)
+				offset = offset + len
+				var f_name string
+				switch f.data_type.(type) {
+				case *TransactionIdType:
+					f_name = f.data_type.(*TransactionIdType).name
+				case *IntegerType:
+					f_name = f.data_type.(*IntegerType).name
+				}
+				fieldDescriptor := NewFieldDescriptor(f.name, f_name, filed_value, f.extern(int64(offset), index, this_record))
+				switch p {
+				case "key":
+					keys = append(keys, fieldDescriptor)
+				case "row":
+					rows = append(rows, fieldDescriptor)
+				case "sys":
+					syss = append(syss, fieldDescriptor)
+				}
+
+			}
+			this_record.key = keys
+			this_record.row = rows
+			this_record.sys = syss
+			//叶子结点的系统字段
+			for i := 0; i < len(this_record.sys); i++ {
+				switch this_record.sys[i].name {
+				case "DB_TRX_ID":
+					// if len(this_record.sys[i].value.(uint64)) == 0 {
+					// 	this_record.transaction_id = 0
+					// } else {
+					// 	this_record.transaction_id = uint64(this_record.sys[i].value.([]uint8)[0])
+					// }
+					this_record.Transaction_id = this_record.sys[i].value.(uint64)
+					Log.Info("record this record's transaction_id is =======> %+v\n", this_record.Transaction_id)
+				case "DB_ROLL_PTR":
+					// if len(this_record.sys[i].value.([]uint8)) == 0 {
+					// 	this_record.roll_pointer = 0
+					// } else {
+					// 	this_record.roll_pointer = uint64(this_record.sys[i].value.([]uint8)[0])
+					// }
+					this_record.Roll_pointer = this_record.sys[i].value.(*Pointer)
+
+				}
+
+			}
 		}
-		this_record.key = keys
-		this_record.row = rows
-		this_record.sys = syss
 
+		//叶子结点，记录值是key和child_page_number
 		if index.IsLeaf() == false {
-			//child_page_number是在最后的4个字节，前面是最小key的值,先写死,这里key的信息需要在描述符中获取
+			//child_page_number是在最后的4个字节，前面是最小key的值,这里key的信息需要在描述符中获取
 			fmt.Println("offset==?", offset)
 			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(record_offset)+16, 4))
 			fmt.Println("child_page_number==?", this_record.Child_page_number)
@@ -474,28 +506,6 @@ func (index *Index) record(offset uint64) *Record {
 		}
 
 		this_record.Length = rec_len
-
-		for i := 0; i < len(this_record.sys); i++ {
-			switch this_record.sys[i].name {
-			case "DB_TRX_ID":
-				// if len(this_record.sys[i].value.(uint64)) == 0 {
-				// 	this_record.transaction_id = 0
-				// } else {
-				// 	this_record.transaction_id = uint64(this_record.sys[i].value.([]uint8)[0])
-				// }
-				this_record.Transaction_id = this_record.sys[i].value.(uint64)
-				Log.Info("record this record's transaction_id is =======> %+v\n", this_record.Transaction_id)
-			case "DB_ROLL_PTR":
-				// if len(this_record.sys[i].value.([]uint8)) == 0 {
-				// 	this_record.roll_pointer = 0
-				// } else {
-				// 	this_record.roll_pointer = uint64(this_record.sys[i].value.([]uint8)[0])
-				// }
-				this_record.Roll_pointer = this_record.sys[i].value.(*Pointer)
-
-			}
-
-		}
 	}
 	return NewRecord(index.Page, this_record)
 }
@@ -945,7 +955,7 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 		header.Lengths = make(map[string]int)
 		header.Nulls = ""
 		header.Externs = ""
-		all_fields := index.Record_Fields()
+		all_fields, _, _ := index.Get_Record_Fields_From_Format()
 		for i := 0; i < len(all_fields); i++ {
 			f := all_fields[i]
 			if f.position >= len(lengths) {
