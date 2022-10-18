@@ -268,7 +268,7 @@ func (dh *DataDictionary) Data_Dictionary_Index_Describer(table_name string, ind
 }
 
 // return and Index object
-// 这个index_root_page 对吗？获取的level=1导致没有加 sys，导致了判断错误
+
 func (dh *DataDictionary) Get_Data_Dictionary_Index_Tree(table_name string, index_name string) *BTreeIndex {
 	var index_root_page uint64
 	if table_name == "SYS_TABLES" {
@@ -318,18 +318,17 @@ func (dh *DataDictionary) Each_Index_By_Space_Id(space_id uint64) []map[string]i
 	all_record_field := dh.Each_Index_Record_Field("SYS_INDEXES", "PRIMARY")
 	var records []map[string]interface{}
 	//根据上面返回的每个记录进行sapce的匹配，匹配的话输出
-	Log.Info("each_index_by_space_id() space_id =======>%+v\n", space_id)
 
 	for _, record := range all_record_field {
-		Log.Info("each_index_by_space_id() =======>%+v\n", record)
-		Log.Info("each_index_by_space_id() record[space]=======>%+v\n", record["SPACE"])
+		// fmt.Printf("each_index_by_space_id() =======>%+v\n", record)
+		// fmt.Printf("each_index_by_space_id() record[space]=======>%+v\n", record["SPACE"])
 
 		space_no := uint64(record["SPACE"].(int64))
 		if space_no == space_id {
 			records = append(records, record)
 		}
 	}
-	Log.Info("each_index_by_space_id() records length is======%d", len(records))
+
 	return records
 
 }

@@ -103,10 +103,10 @@ func (s *Space) Get_Index_Tree(root_page_number uint64, record_describer interfa
 }
 
 func (s *Space) Each_Index(innodb_system *System) []*BTreeIndex {
-	//普通用户表空间一般只有一个index，如果没有设置参数，可能都放到系统表空间
+	//普通用户表空间一般只有一个index，如果没有设置参数，可能都放到系统表空间,针对这种情况需要获取所有的index的根
 	var indexes []*BTreeIndex
 	root_pages := RemoveRepeatedElement(s.Each_Index_Root_Page_Number(innodb_system))
-	Log.Info("eache_index all_root_page_number=========>%+v", root_pages)
+
 	for _, root := range root_pages {
 		indexes = append(indexes, s.Get_Index_Tree(root, nil))
 	}

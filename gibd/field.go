@@ -138,14 +138,15 @@ func (rf *RecordField) Value_By_Length(offset uint64, field_length int64, index 
 
 func (rf *RecordField) length(record *UserRecord) int64 {
 	var len int64
-	name_in_map := false
+	//字段名称在header中，这个字段是变长的字符串，需要在header 中获取长度信息
+	name_in_header_lengths_map := false
 	for k, _ := range record.header.Lengths {
 		if rf.name == string(k) {
-			name_in_map = true
+			name_in_header_lengths_map = true
 		}
 	}
-	name_in_map = false //暂时设置
-	if name_in_map {
+	// name_in_header_lengths_map = false //暂时设置
+	if name_in_header_lengths_map {
 		len = int64(record.header.Lengths[rf.name])
 	} else {
 		switch value := rf.data_type.(type) {
@@ -153,8 +154,9 @@ func (rf *RecordField) length(record *UserRecord) int64 {
 			len = int64(rf.data_type.(*IntegerType).width)
 		case *BitType:
 			len = int64(rf.data_type.(*BitType).width)
-		case *VariableCharacterType:
-			len = int64(rf.data_type.(*VariableCharacterType).width)
+		// case *VariableCharacterType:
+		// 	//此处的变长字段长度值，需要在record header 中的variable field lengths中获取
+		// 	len = int64(rf.data_type.(*VariableCharacterType).width)
 		default:
 			fmt.Println("unkown data type===>", value)
 		}

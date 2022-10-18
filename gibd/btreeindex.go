@@ -1,7 +1,5 @@
 package gibd
 
-import "fmt"
-
 //表示树，针对树的一些操作
 type BTreeIndex struct {
 	Root             *Index //相当于节点
@@ -84,7 +82,7 @@ func (tree *BTreeIndex) Min_Page_At_Level(level int) *Index {
 		switch record.record.(type) {
 		case *UserRecord:
 			child_page_number := record.record.(*UserRecord).Child_page_number
-			fmt.Println("child_page_number", child_page_number)
+
 			// if child_page_number > 0 {
 			idx := tree.Page(child_page_number)
 

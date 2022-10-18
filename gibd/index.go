@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 
 	"github.com/tidwall/pretty"
 )
@@ -431,25 +432,64 @@ func (index *Index) record(offset uint64) *Record {
 		rows := []*FieldDescriptor{}
 		syss := []*FieldDescriptor{}
 
-		fmt.Println("all_field", all_field)
-		//待修改，获取记录的值，这部分需要分叶子结点和非叶子结点分别处理，非叶子结点只需要获取key值即可,或许这里加个判断，可以不用输出非叶子结点的值，我们目的是获取child_page_number
+		sort.Sort(FiledSort(key_arr))
+
+		sort.Sort(FiledSort(row_arr))
+		//待修改，获取记录的值，这部分需要分叶子结点和非叶子结点分别处理，非叶子结点只需要获取key值，获取child_page_number
+		// https://blog.jcole.us/2013/01/10/the-physical-structure-of-records-in-innodb/
 		if index.IsLeaf() == true {
 			//先获取key字段，然后是transaction id 然后是roll pointer 然后是non-key字段
+			var keyLen uint64
 			for i := 0; i < len(key_arr); i++ {
+				f := key_arr[i]
+				p := fmap[f.position]
+				//get value exception unkown data type===> &{ 0 false}
+
+				// fmt.Printf("record() key_filed =========>%+v\n", f)
+				filed_value, len := f.Value(offset, this_record, index)
+
+				keyLen = keyLen + len
+				// fmt.Printf("record() recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
+				// fmt.Printf("record() recordfield value =====>%v\n", filed_value)
+				offset = offset + len
+				var f_name string
+				switch f.data_type.(type) {
+				case *TransactionIdType:
+					f_name = f.data_type.(*TransactionIdType).name
+				case *IntegerType:
+					f_name = f.data_type.(*IntegerType).name
+				}
+				fieldDescriptor := NewFieldDescriptor(f.name, f_name, filed_value, f.extern(int64(offset), index, this_record))
+				switch p {
+				case "key":
+					keys = append(keys, fieldDescriptor)
+				case "row":
+					rows = append(rows, fieldDescriptor)
+				case "sys":
+					syss = append(syss, fieldDescriptor)
+				}
 
 			}
 
-			for i := 0; i < len(all_field); i++ {
-				f := all_field[i]
+			//获取事务id,回滚段指针
+			// transaction_id := BufferReadAt(index.Page, int64(offset)+int64(keyLen), 6)
+
+			// fmt.Println("transaction_id ==", transaction_id)
+
+			// roll_pointer := BufferReadAt(index.Page, int64(offset)+int64(keyLen)+6, 7)
+			// fmt.Println("roll pointer ==", roll_pointer)
+
+			//获取non-key field
+			offset = offset + 13
+
+			for i := 0; i < len(row_arr); i++ {
+				f := row_arr[i]
 				p := fmap[f.position]
 				//get value exception unkown data type===> &{ 0 false}
-				fmt.Println("the page is", index.Page.Page_number)
-				fmt.Printf("record() this_field_offset =========>%+v\n", offset)
-				fmt.Printf("record() all_filed =========>%+v\n", f)
+
 				filed_value, len := f.Value(offset, this_record, index)
-				fmt.Printf("record() recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
-				fmt.Printf("record() recordfield value =====>%v\n", filed_value)
 				offset = offset + len
+
 				var f_name string
 				switch f.data_type.(type) {
 				case *TransactionIdType:
@@ -497,10 +537,24 @@ func (index *Index) record(offset uint64) *Record {
 
 		//叶子结点，记录值是key和child_page_number
 		if index.IsLeaf() == false {
+
+			var keyLen uint64
+			for i := 0; i < len(key_arr); i++ {
+				f := key_arr[i]
+				// p := fmap[f.position]
+				//get value exception unkown data type===> &{ 0 false}
+
+				filed_value, len := f.Value(offset, this_record, index)
+				offset = offset + len
+				keyLen = keyLen + len
+				// fmt.Printf("non-leaf recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
+				fmt.Printf("non-leaf key  value =====>%v\n", filed_value)
+				// // offset = offset + len
+			}
 			//child_page_number是在最后的4个字节，前面是最小key的值,这里key的信息需要在描述符中获取
-			fmt.Println("offset==?", offset)
-			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(record_offset)+16, 4))
-			fmt.Println("child_page_number==?", this_record.Child_page_number)
+			// fmt.Println("offset==?", record_offset)
+			this_record.Child_page_number = uint64(BufferReadAt(index.Page, int64(record_offset)+int64(keyLen), 4))
+
 			offset = offset + 4
 			rec_len += 4
 		}
@@ -548,9 +602,10 @@ func (index *Index) Get_Record_Describer() interface{} {
 func Restruct_Describer(a interface{}) map[string]interface{} {
 
 	typ := reflect.TypeOf(a)
-	val := reflect.ValueOf(a) //获取reflect.Type类型
-
-	kd := val.Kind() //获取到a对应的类别
+	//获取reflect.Type类型
+	val := reflect.ValueOf(a)
+	//获取到a对应的类别
+	kd := val.Kind()
 
 	if kd != reflect.Struct {
 		return nil
@@ -608,7 +663,8 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 	for i := 0; i <= RECORD_MAX_N_FIELDS; i++ {
 		position[i] = i
 	}
-	description := index.Get_Record_Describer() //用之前的描述符，更改下格式
+	//用之前的描述符，更改下格式
+	description := index.Get_Record_Describer()
 	fields := make(map[string]string)
 
 	var ruby_description map[string]interface{}
