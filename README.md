@@ -13,5 +13,5 @@ go run main.go -s dba_user2.ibd -p 3 -m page-dump
 ```
 parse undo block
 read table information and parse record by parsing config file when there is no dictionary  info 
-add datetime timestamp data type
+print all rows for user tables in ibd file
 ```

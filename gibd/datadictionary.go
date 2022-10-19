@@ -320,9 +320,6 @@ func (dh *DataDictionary) Each_Index_By_Space_Id(space_id uint64) []map[string]i
 	//根据上面返回的每个记录进行sapce的匹配，匹配的话输出
 
 	for _, record := range all_record_field {
-		// fmt.Printf("each_index_by_space_id() =======>%+v\n", record)
-		// fmt.Printf("each_index_by_space_id() record[space]=======>%+v\n", record["SPACE"])
-
 		space_no := uint64(record["SPACE"].(int64))
 		if space_no == space_id {
 			records = append(records, record)

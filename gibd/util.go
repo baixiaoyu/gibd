@@ -324,6 +324,54 @@ func BinaryStringToBytes(s string) (bs []byte) {
 	return
 }
 
+func ParseMySQLDateTime(bytes []byte) *DateTimeType {
+	dt := NewDateTimeType()
+	//1位
+	// var oneBit = int64(0x1)
+
+	//13位, year
+	// var thirteenBits = int64(0x1fff)
+	var seventenBits = int64(0x1ffff)
+	//4位, month
+	// var fourBits = int64(0xf)
+
+	//5位, day
+	var fiveBits = int64(0x1f)
+
+	//6位, minute/second
+	var sixBits = int64(0x3f)
+
+	//24位, microseconds
+	var twentyFourBits = int64(0xffffff)
+
+	//8字节的int64
+	// a := int64(2277273300067418112)
+	a, _ := BytesToUIntLittleEndian1(bytes)
+
+	year_and_month := (int64(a) >> 46) & seventenBits
+
+	year := year_and_month / 13
+	month := year_and_month % 13
+
+	day := (int64(a) >> 41) & fiveBits
+	hour := (int64(a) >> 36) & sixBits
+	minute := (int64(a) >> 30) & sixBits
+	second := (int64(a) >> 24) & sixBits
+	microseconds := (int64(a)) & twentyFourBits
+
+	dt.year = year
+	dt.month = month
+	dt.day = day
+	dt.hour = hour
+	dt.minute = minute
+	dt.second = second
+	dt.microseconds = microseconds
+
+	// dt.hour = hour
+
+	return dt
+
+}
 func ParseMySQLInt(index *Index, bytes []byte) int {
 	var b [4]byte
 	var v2 = 128

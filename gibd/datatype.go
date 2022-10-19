@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -29,6 +30,31 @@ func (bit *BitType) Value(data int) int {
 	return data
 }
 
+type DateTimeType struct {
+	name         string
+	year         int64
+	month        int64
+	day          int64
+	hour         int64
+	minute       int64
+	second       int64
+	microseconds int64
+}
+
+func NewDateTimeType() *DateTimeType {
+	return &DateTimeType{}
+}
+func (datetime *DateTimeType) Value(data []byte, index *Index) *DateTimeType {
+	dt := ParseMySQLDateTime(data)
+	return dt
+}
+
+func (datetime *DateTimeType) String() string {
+	res := fmt.Sprintf("%d-%d-%d %d-%d-%d", datetime.year, datetime.month, datetime.day, datetime.hour, datetime.minute, datetime.second)
+	return res
+
+}
+
 type IntegerType struct {
 	name     string
 	width    int
@@ -45,13 +71,15 @@ func NewIntegerType(base_type string, modifiers string, properties string) *Inte
 
 }
 
-func (integer *IntegerType) Value(data []byte, index *Index) int64 {
-	nbits := integer.width * 8
-	if integer.unsigned {
-		return integer.Get_Uint(data, nbits, index)
-	} else {
-		return integer.Get_Int(data, nbits, index)
-	}
+// 这个是不对的，需要使用ParseMySQLInt 方法
+func (integer *IntegerType) Value(data []byte, index *Index) int {
+	// nbits := integer.width * 8
+	// if integer.unsigned {
+	// 	return integer.Get_Uint(data, nbits, index)
+	// } else {
+	// 	return integer.Get_Int(data, nbits, index)
+	// }
+	return ParseMySQLInt(index, data)
 }
 
 func (integer *IntegerType) Get_Uint(data []byte, nbits int, index *Index) int64 {
@@ -205,8 +233,8 @@ var TYPES = map[string]string{
 	"YEAR":       "YearType",
 	"TIME":       "TimeType",
 	"DATE":       "DateType",
-	"DATETIME":   "DatetimeType",
-	"TIMESTAMP":  "TimestampType",
+	"DATETIME":   "DateTimeType",
+	"TIMESTAMP":  "TimeStampType",
 	"TRX_ID":     "TransactionIdType",
 	"ROLL_PTR":   "RollPointerType",
 }

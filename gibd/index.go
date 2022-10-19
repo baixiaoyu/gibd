@@ -395,6 +395,12 @@ func (index *Index) record(offset uint64) *Record {
 		//   |  1 | cccccc   | ll    |    NULL |      30 |
 		//   +----+----------+-------+---------+---------+
 		fmt.Println("offset ", offset)
+		fmt.Println("header:")
+
+		data, _ := json.Marshal(this_record.header)
+		outStr := pretty.Pretty(data)
+		fmt.Printf("%s\n", outStr)
+
 		// cluster_key_fileds := (index.Page.BufferReadAt(int64(offset), 4))
 
 		bytes := ReadBytes(index.Page, int64(offset), 4)
@@ -409,21 +415,28 @@ func (index *Index) record(offset uint64) *Record {
 		roll_pointer := BufferReadAt(index.Page, int64(offset)+10, 7)
 		fmt.Println("roll pointer ==", roll_pointer)
 
-		username := ReadBytes(index.Page, int64(offset)+17, 2)
+		username := ReadBytes(index.Page, int64(offset)+17, 6)
 		fmt.Println(" value1==", string(username))
 
-		bytes = ReadBytes(index.Page, int64(offset)+19, 4)
-		class := ParseMySQLInt(index, bytes)
-		fmt.Println(" value2==", (class))
+		class := ReadBytes(index.Page, int64(offset)+23, 2)
+		fmt.Println(" value2==", string(class))
 
-		bytes = ReadBytes(index.Page, int64(offset)+23, 4)
+		bytes = ReadBytes(index.Page, int64(offset)+25, 4)
 		account := ParseMySQLInt(index, bytes)
-
 		fmt.Println(" value3==", (account))
 
-		bytes = ReadBytes(index.Page, int64(offset)+29, 4)
-		version := ParseMySQLInt(index, bytes)
-		fmt.Println(" value4==", (version))
+		bytes = ReadBytes(index.Page, int64(offset)+29, 8)
+		// year := bytes[]
+		fmt.Println(" value4==", (bytes))
+		// fmt.Println(" value4==", (year))
+
+		dt := ParseMySQLDateTime(bytes)
+		fmt.Println(dt.String())
+		// version := ParseMySQLInt(index, bytes)
+
+		// bytes = ReadBytes(index.Page, int64(offset)+29, 5)
+		// ctime := ParseMySQLInt(index, bytes)
+		// fmt.Println(" value5==", (ctime))
 
 		return NewRecord(index.Page, this_record)
 	} else {
@@ -956,7 +969,7 @@ func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) string {
 	//size = fields.count(is_nullable())
 	//方便测试，将null bitmap和extern的信息放在了一起，默认测试分别占用1个字节，根据具体情况修改，因为没有字段元数据信息
 
-	nulls := ReadBytes(index.Page, int64(offset), 1)
+	nulls := ReadBytes(index.Page, int64(offset), 2)
 
 	nullString := BytesToBinaryString(nulls)
 	return nullString
