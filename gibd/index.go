@@ -431,12 +431,13 @@ func (index *Index) record(offset uint64) *Record {
 		// fmt.Println(" value4==", (year))
 
 		dt := ParseMySQLDateTime(bytes)
-		fmt.Println(dt.String())
+		fmt.Println("ctime", dt.String())
 		// version := ParseMySQLInt(index, bytes)
 
-		// bytes = ReadBytes(index.Page, int64(offset)+29, 5)
-		// ctime := ParseMySQLInt(index, bytes)
-		// fmt.Println(" value5==", (ctime))
+		bytes = ReadBytes(index.Page, int64(offset)+37, 4)
+		fmt.Println(" value5==", (bytes))
+		ctime := ParseMySQLTimeStamp(bytes)
+		fmt.Println(" value5==", (ctime.value))
 
 		return NewRecord(index.Page, this_record)
 	} else {

@@ -30,6 +30,21 @@ func (bit *BitType) Value(data int) int {
 	return data
 }
 
+type TimeStampType struct {
+	value string
+	name  string
+	width int
+}
+
+func NewTimeStampType() *TimeStampType {
+	return &TimeStampType{width: 4}
+}
+func (timestamp *TimeStampType) Value(data []byte, index *Index) *TimeStampType {
+
+	ts := ParseMySQLTimeStamp(data)
+	return ts
+}
+
 type DateTimeType struct {
 	name         string
 	year         int64
@@ -39,10 +54,11 @@ type DateTimeType struct {
 	minute       int64
 	second       int64
 	microseconds int64
+	width        int
 }
 
 func NewDateTimeType() *DateTimeType {
-	return &DateTimeType{}
+	return &DateTimeType{width: 8}
 }
 func (datetime *DateTimeType) Value(data []byte, index *Index) *DateTimeType {
 	dt := ParseMySQLDateTime(data)

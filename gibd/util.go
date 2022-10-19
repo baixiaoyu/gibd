@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"time"
 	"unsafe"
 
 	"github.com/astaxie/beego/logs"
@@ -324,6 +325,24 @@ func BinaryStringToBytes(s string) (bs []byte) {
 	return
 }
 
+func ParseMySQLTimeStamp(bytes []byte) *TimeStampType {
+	ts := NewTimeStampType()
+	unix := uint32(bytes[3]) + uint32(bytes[2])<<8 + uint32(bytes[1])<<16 + uint32(bytes[0])<<24
+	// unix, _ := BytesToUIntLittleEndian1(bytes)
+
+	if unix == 0 {
+		ts.value = "0000-00-00 00:00:00"
+		return ts
+	}
+	fmt.Println("stamp=", unix)
+
+	timeLayout := "2006-01-02 15:04:05"
+	timeStr := time.Unix(int64(unix), 0).Format(timeLayout)
+	ts.value = timeStr
+	return ts
+
+}
+
 func ParseMySQLDateTime(bytes []byte) *DateTimeType {
 	dt := NewDateTimeType()
 	//1位
@@ -459,4 +478,9 @@ func (s FiledSort) Less(i, j int) bool {
 	//按字段比较大小,此处是降序排序
 	//返回数组中下标为i的数据是否小于下标为j的数据
 	return s[i].position < s[j].position
+}
+
+func BytesToUint32(b []byte) uint32 {
+	_ = b[3] // bounds check hint to compiler; see golang.org/issue/14808
+	return uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24
 }
