@@ -6,15 +6,6 @@ import (
 	"strconv"
 )
 
-type Field struct {
-	FieldName string `json:"fieldname"`
-	// FieldDesc string `json:"fieldesc"`
-	DataType   string `json:"datatype"`
-	Properties string `json:Properties`
-	IsNull     string `json:"isnull"`
-	Length     int    `json:"length"`
-	Is_key     bool   `json:"is_key"`
-}
 type SysTablesPrimary struct {
 	TAB_TYPE     string `json:"tab_type"`
 	NAME         Field  `json:"name"`
