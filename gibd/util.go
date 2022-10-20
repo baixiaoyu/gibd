@@ -327,18 +327,37 @@ func BinaryStringToBytes(s string) (bs []byte) {
 
 func ParseMySQLTimeStamp(bytes []byte) *TimeStampType {
 	ts := NewTimeStampType()
-	unix := uint32(bytes[3]) + uint32(bytes[2])<<8 + uint32(bytes[1])<<16 + uint32(bytes[0])<<24
+	for _, b := range bytes {
+		fmt.Println(byte(b))
+	}
+	fmt.Println(uint32(bytes[0]) << 24)
+	unix := uint32((bytes[3])) + uint32(bytes[2])<<8 + uint32(bytes[1])<<16 + uint32(bytes[0])<<24
 	// unix, _ := BytesToUIntLittleEndian1(bytes)
 
 	if unix == 0 {
 		ts.value = "0000-00-00 00:00:00"
 		return ts
 	}
-	fmt.Println("stamp=", unix)
 
 	timeLayout := "2006-01-02 15:04:05"
 	timeStr := time.Unix(int64(unix), 0).Format(timeLayout)
 	ts.value = timeStr
+
+	// stringTime := "2022-10-19 11:12:55"
+
+	// loc, _ := time.LoadLocation("Local")
+
+	// the_time, err := time.ParseInLocation("2006-01-02 15:04:05", stringTime, loc)
+
+	// if err == nil {
+
+	// 	unix_time := the_time.Unix() //1504082441
+
+	// 	fmt.Println(unix_time)
+	// 	bytes = IntToBytes(int(unix_time))
+	// 	fmt.Println(bytes)
+	// }
+
 	return ts
 
 }
@@ -348,8 +367,6 @@ func ParseMySQLDateTime(bytes []byte) *DateTimeType {
 	//1位
 	// var oneBit = int64(0x1)
 
-	//13位, year
-	// var thirteenBits = int64(0x1fff)
 	var seventenBits = int64(0x1ffff)
 	//4位, month
 	// var fourBits = int64(0xf)
@@ -385,9 +402,7 @@ func ParseMySQLDateTime(bytes []byte) *DateTimeType {
 	dt.minute = minute
 	dt.second = second
 	dt.microseconds = microseconds
-
 	// dt.hour = hour
-
 	return dt
 
 }

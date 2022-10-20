@@ -425,19 +425,18 @@ func (index *Index) record(offset uint64) *Record {
 		account := ParseMySQLInt(index, bytes)
 		fmt.Println(" value3==", (account))
 
-		bytes = ReadBytes(index.Page, int64(offset)+29, 8)
+		//datetime没有微妙，用的是5个字节，不是8个，这里需要判断，否则后面的字段解析的都不对了
+		bytes = ReadBytes(index.Page, int64(offset)+29, 5)
 		// year := bytes[]
-		fmt.Println(" value4==", (bytes))
-		// fmt.Println(" value4==", (year))
 
 		dt := ParseMySQLDateTime(bytes)
-		fmt.Println("ctime", dt.String())
+		fmt.Println("value4", dt.String())
 		// version := ParseMySQLInt(index, bytes)
 
-		bytes = ReadBytes(index.Page, int64(offset)+37, 4)
-		fmt.Println(" value5==", (bytes))
+		bytes = ReadBytes(index.Page, int64(offset)+34, 4)
+
 		ctime := ParseMySQLTimeStamp(bytes)
-		fmt.Println(" value5==", (ctime.value))
+		fmt.Println("value5==", (ctime.value))
 
 		return NewRecord(index.Page, this_record)
 	} else {
