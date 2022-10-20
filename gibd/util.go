@@ -101,35 +101,6 @@ func ReadBytes(p *Page, offset int64, size int64) []byte {
 	return byteStorage
 }
 
-// func (p *Page) test(b []byte) int {
-
-// 	if len(b) == 3 {
-// 		b = append([]byte{0}, b...)
-// 	}
-// 	bytesBuffer := bytes.NewBuffer(b)
-// 	switch len(b) {
-// 	case 1:
-// 		var tmp uint8
-// 		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
-// 		return int(tmp)
-// 	case 2:
-// 		var tmp uint16
-// 		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
-// 		return int(tmp)
-// 	case 4:
-// 		var tmp uint32
-// 		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
-// 		return int(tmp)
-
-// 	case 8:
-// 		var tmp uint64
-// 		binary.Read(bytesBuffer, binary.LittleEndian, &tmp)
-// 		return int(tmp)
-// 	default:
-// 		return 0
-// 	}
-// }
-
 func BytesToUIntLittleEndian(b []byte) int {
 	// 不知道这种长度是3，7，6的转化是否正确
 	if len(b) == 3 || len(b) == 7 {
@@ -342,22 +313,6 @@ func ParseMySQLTimeStamp(bytes []byte) *TimeStampType {
 	timeLayout := "2006-01-02 15:04:05"
 	timeStr := time.Unix(int64(unix), 0).Format(timeLayout)
 	ts.value = timeStr
-
-	// stringTime := "2022-10-19 11:12:55"
-
-	// loc, _ := time.LoadLocation("Local")
-
-	// the_time, err := time.ParseInLocation("2006-01-02 15:04:05", stringTime, loc)
-
-	// if err == nil {
-
-	// 	unix_time := the_time.Unix() //1504082441
-
-	// 	fmt.Println(unix_time)
-	// 	bytes = IntToBytes(int(unix_time))
-	// 	fmt.Println(bytes)
-	// }
-
 	return ts
 
 }

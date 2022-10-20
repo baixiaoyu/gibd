@@ -88,14 +88,14 @@ func NewIntegerType(base_type string, modifiers string, properties string) *Inte
 }
 
 // 这个是不对的，需要使用ParseMySQLInt 方法
-func (integer *IntegerType) Value(data []byte, index *Index) int {
-	// nbits := integer.width * 8
-	// if integer.unsigned {
-	// 	return integer.Get_Uint(data, nbits, index)
-	// } else {
-	// 	return integer.Get_Int(data, nbits, index)
-	// }
-	return ParseMySQLInt(index, data)
+func (integer *IntegerType) Value(data []byte, index *Index) int64 {
+	nbits := integer.width * 8
+	if integer.unsigned {
+		return integer.Get_Uint(data, nbits, index)
+	} else {
+		return integer.Get_Int(data, nbits, index)
+	}
+
 }
 
 func (integer *IntegerType) Get_Uint(data []byte, nbits int, index *Index) int64 {

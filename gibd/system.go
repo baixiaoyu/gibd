@@ -33,9 +33,7 @@ func (system *System) Add_Space(space *Space) {
 
 func (system *System) System_Space() *Space {
 	for _, value := range system.spaces {
-		// if value.Innodb_system != nil {
-		// 	return value
-		// }
+
 		if value.IsSystemSpace {
 			return value
 		}
@@ -47,7 +45,6 @@ func (system *System) Each_Table_Name() []string {
 	var table_names []string
 	tables := system.data_dictionary.Get_Each_Table_Name()
 	for _, value := range tables {
-		Log.Info("each_table_name===%+v\n", value["NAME"])
 		table_names = append(table_names, value["NAME"].(string))
 	}
 	return table_names

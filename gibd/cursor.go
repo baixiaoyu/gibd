@@ -80,24 +80,7 @@ func (rc *RecordCursor) Next_Record() *Record {
 			return rec
 		}
 	}
-	// switch rc.Record.record.(type) {
-	// case UserRecord:
-	// 	rc_record_offset = rc.Record.record.(*UserRecord).offset
-	// case SystemRecord:
-	// 	rc_record_offset = rc.Record.record.(*SystemRecord).offset
-	// }
-	// switch rec.record.(type) {
-	// case UserRecord:
-	// 	next_record_offset = rec.record.(*UserRecord).offset
-	// case SystemRecord:
-	// 	next_record_offset = rec.record.(*SystemRecord).offset
-	// }
-	// Log.Info("next_record this record's offset is========>%+v\n", rc_record_offset)
-	// Log.Info("next_record next record's offset is========>%+v\n", next_record_offset)
 
-	//Log.Info("next_record this record's page number is========>%+v\n", next_record_offset)
-	// Log.Info("next_record supremum header.next is========>%+v\n", supremum.record.(*SystemRecord).header.next)
-	// Log.Info("next_record record header.next is========>%+v\n", rec.record.(*UserRecord).header.next)
 	return nil
 }
 

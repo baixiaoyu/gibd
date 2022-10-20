@@ -77,9 +77,6 @@ func Parse_Type_Definition(type_definition string) (string, string) {
 		end_pos := strings.Index(type_definition, ")")
 		modifiers := type_definition[start_pos+1 : end_pos]
 		type_def := type_definition[0:start_pos]
-		Log.Info("parse_type_definition_type_def====>%+v\n", type_def)
-		Log.Info("parse_type_definition_modifiers====>%+v\n", modifiers)
-
 		return type_def, modifiers
 	} else {
 		modifiers := " "
@@ -113,25 +110,7 @@ func (rf *RecordField) Value_By_Length(offset uint64, field_length int64, index 
 	default:
 		Log.Info("value_by_length() 还未实现的类型========%\n")
 	}
-	// if _, ok := rf.data_type.(interface{ value() }); ok {
-	// 	Log.Info("value_by_length()   call value method========%\n")
-	// 	switch rf.data_type.(type) {
-	// 	case *IntegerType:
-	// 		Log.Info("value_by_length() record type is interger  call value method========%\n")
 
-	// 		return rf.data_type.(*IntegerType).value(rf.read(offset, field_length, index), index), uint64(field_length)
-	// 	}
-	// } else if _, ok := rf.data_type.(interface{ read() }); ok {
-	// 	Log.Info("value_by_length() call read method========%\n")
-	// 	switch rf.data_type.(type) {
-	// 	case *TransactionIdType:
-	// 		return rf.data_type.(*TransactionIdType).read(offset, index.Page), 6
-	// 	}
-	// } else {
-	// 	Log.Info("value_by_length() no value no read  call read method========%\n")
-
-	// 	return rf.read(offset, field_length, index), 0
-	// }
 	return nil, 0
 
 }

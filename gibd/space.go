@@ -75,26 +75,10 @@ func NewSpace(filenames []string) *Space {
 	return s
 }
 
-// func (s *Space) Page_Fsp_Hdr() uint64 {
-// 	return 0
-// }
-
-// func (s *Space) Fsp() FspHdrXdes {
-
-// 	page := s.Page(s.Page_Fsp_Hdr())
-// 	fsp := NewFspHdrXdes()
-// 	fsp.Fsp_Header()
-// 	return fsp
-
-// }
-
 func (s *Space) Get_Space_Id() uint64 {
 
 	return s.Space_id
-	// fsp := s.Fsp()
 
-	// return fsp.FspHeader.Space_id
-	//return GetFieldName("space_id", *fsp)
 }
 
 func (s *Space) Get_Index_Tree(root_page_number uint64, record_describer interface{}) *BTreeIndex {

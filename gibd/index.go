@@ -3,7 +3,6 @@ package gibd
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"sort"
 
 	"github.com/tidwall/pretty"
@@ -260,8 +259,6 @@ func (index *Index) page(page_number uint64) *Page {
 	return page
 }
 
-// var page_record_cursor_next_record int
-
 func (index *Index) each_record() []*Record {
 	var records []*Record
 
@@ -294,6 +291,7 @@ func (index *Index) Min_Record() *Record {
 	return min
 }
 
+//获取用户的最大值
 func (index *Index) Max_Record() *Record {
 	//max_cursor := index.record_cursor(index.supremum().system_record.offset, "backward")
 	// max := max_cursor.prev_record
@@ -306,10 +304,6 @@ func (index *Index) Max_Record() *Record {
 
 func (index *Index) Get_Record_Fields_From_Format() ([]*RecordField, []*RecordField, []*RecordField) {
 	var res_arr []*RecordField
-
-	// Log.Info("record_fields,key ==========%v\n", index.Record_Format["key"])
-	// fmt.Printf("record_fields,key %v\n", index.Record_Format["key"])
-
 	//添加判断，如果没有record_format就是表示普通的表空间，普通表空间没有办法获取字段类型的
 	if index.Record_Format == nil {
 		return nil, nil, nil
@@ -318,7 +312,7 @@ func (index *Index) Get_Record_Fields_From_Format() ([]*RecordField, []*RecordFi
 	for i := 0; i < len(key_arr); i++ {
 		res_arr = append(res_arr, key_arr[i])
 	}
-	Log.Info("record_fields record_format ==========%v\n", index.Record_Format)
+
 	if index.Record_Format["sys"] != nil {
 		sys_arr := index.Record_Format["sys"].([]*RecordField)
 		for i := 0; i < len(sys_arr); i++ {
@@ -326,7 +320,6 @@ func (index *Index) Get_Record_Fields_From_Format() ([]*RecordField, []*RecordFi
 		}
 	}
 
-	Log.Info("record_fields,row ==========%v\n", index.Record_Format["row"])
 	row_arr := index.Record_Format["row"].([]*RecordField)
 	// fmt.Printf("record_fields,row %v\n", index.Record_Format["row"])
 	if index.Record_Format["row"] != nil {
@@ -456,14 +449,11 @@ func (index *Index) record(offset uint64) *Record {
 			for i := 0; i < len(key_arr); i++ {
 				f := key_arr[i]
 				p := fmap[f.position]
-				//get value exception unkown data type===> &{ 0 false}
 
-				// fmt.Printf("record() key_filed =========>%+v\n", f)
 				filed_value, len := f.Value(offset, this_record, index)
 
 				keyLen = keyLen + len
-				// fmt.Printf("record() recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
-				// fmt.Printf("record() recordfield value =====>%v\n", filed_value)
+
 				offset = offset + len
 				var f_name string
 				switch f.data_type.(type) {
@@ -554,15 +544,11 @@ func (index *Index) record(offset uint64) *Record {
 			var keyLen uint64
 			for i := 0; i < len(key_arr); i++ {
 				f := key_arr[i]
-				// p := fmap[f.position]
-				//get value exception unkown data type===> &{ 0 false}
 
-				filed_value, len := f.Value(offset, this_record, index)
+				_, len := f.Value(offset, this_record, index)
 				offset = offset + len
 				keyLen = keyLen + len
-				// fmt.Printf("non-leaf recordfield name, datatype =====>%v, %v\n", f.name, f.data_type)
-				fmt.Printf("non-leaf key  value =====>%v\n", filed_value)
-				// // offset = offset + len
+
 			}
 			//child_page_number是在最后的4个字节，前面是最小key的值,这里key的信息需要在描述符中获取
 			// fmt.Println("offset==?", record_offset)
@@ -578,18 +564,6 @@ func (index *Index) record(offset uint64) *Record {
 }
 
 func (index *Index) Get_Record_Format() map[string]interface{} {
-	// if index.record_describer == nil {
-	// 	println("get_record_format record_describer is nil")
-	// }
-
-	// if index.record_describer != nil {
-	// 	if index.Record_format != nil {
-	// 		return index.Record_format
-	// 	} else {
-	// 		record_format := index.Make_Record_Description()
-	// 		return record_format
-	// 	}
-	// }
 
 	if index.Record_Format != nil {
 		return index.Record_Format
@@ -612,237 +586,7 @@ func (index *Index) Get_Record_Describer() interface{} {
 
 }
 
-func Restruct_Describer(a interface{}) map[string]interface{} {
-
-	typ := reflect.TypeOf(a)
-	//获取reflect.Type类型
-	val := reflect.ValueOf(a)
-	//获取到a对应的类别
-	kd := val.Kind()
-
-	if kd != reflect.Struct {
-		return nil
-	}
-	//获取到该结构体有几个字段
-	num := val.NumField()
-	//Log.Info("该结构体有%d个字段\n", num) //4个
-
-	var str_type string
-	var str_key string
-	var str_row string
-	str_key = `"key":[`
-	str_row = `"row":[`
-	//遍历结构体的所有字段
-	for i := 0; i < num; i++ {
-		//获取到struct标签，需要通过reflect.Type来获取tag标签的值
-		tagVal := typ.Field(i).Tag.Get("json")
-		//如果该字段有tag标签就显示，否则就不显示
-		if tagVal != "" {
-			if tagVal == "tab_type" {
-				x := val.Field(i).Interface().(string)
-				str_type = `{"tab_type":"` + x + `",`
-			} else {
-				fieldstr := val.Field(i).Interface().(Field)
-				if fieldstr.Is_key {
-					str_key += `{"name":"` + fieldstr.FieldName + `",` + `"type":["` + fieldstr.DataType + `","` + fieldstr.Properties + `","` + fieldstr.IsNull + `"]},`
-				} else {
-					str_row += `{"name":"` + fieldstr.FieldName + `",` + `"type":["` + fieldstr.DataType + `","` + fieldstr.Properties + `","` + fieldstr.IsNull + `"]},`
-				}
-			}
-		}
-	}
-
-	str_key = str_key[:len(str_key)-1] + `],`
-	str_row = str_row[:len(str_row)-1] + `]}`
-	//println(str_type + str_key + str_row)
-	m := make(map[string]interface{})
-
-	b := []byte(str_type + str_key + str_row)
-	err := json.Unmarshal(b, &m)
-	if err != nil {
-		fmt.Println("Umarshal failed:", err)
-		return nil
-	}
-	//fmt.Println("m:", m)
-	return m
-}
-
 var fmap = make(map[int]string)
-
-// 记录描述符这应该重构下，描述符这有点混乱
-//只实现了系统表systable sysindex 的description
-func (index *Index) Make_Record_Description() map[string]interface{} {
-	var position [1024]int
-	for i := 0; i <= RECORD_MAX_N_FIELDS; i++ {
-		position[i] = i
-	}
-	//用之前的描述符，更改下格式
-	description := index.Get_Record_Describer()
-	fields := make(map[string]string)
-
-	var ruby_description map[string]interface{}
-	//需要在这里把description格式调整成ruby的格式，统一下后续好处理
-
-	switch description.(type) {
-	case *SysTablesPrimary:
-
-		description := description.(*SysTablesPrimary)
-		fields["type"] = description.TAB_TYPE
-
-		//转化成ruby那样的格式，统一下，要不后续不好处理
-		ruby_description = Restruct_Describer(*description)
-		Log.Info("ruby_description key 的内容是=======>%v\n", ruby_description["key"])
-		var counter int
-		counter = 0
-
-		var key_arr []*RecordField
-		for k, v := range ruby_description["key"].([]interface{}) {
-			//key_arr = []*Recordfield{}
-			Log.Info("index=%v", k, "value=%v", v)
-			value := v.(map[string]interface{})
-			prop := value["type"].([]interface{})
-			var properties string
-			for i := 1; i < len(prop); i++ {
-				properties += " " + prop[i].(string)
-			}
-			rf := NewRecordField(position[counter], value["name"].(string), prop[0].(string), properties)
-			Log.Info("record() key type_definition =====>%+v\n", prop[0].(string))
-			Log.Info("record() key properties =====>%+v\n", properties)
-
-			fmap[counter] = "key"
-			key_arr = append(key_arr, rf)
-			counter = counter + 1
-		}
-
-		ruby_description["key"] = key_arr
-
-		//叶子结点加上系统字段
-		var sys_arr []*RecordField
-		if index.IsLeaf() && ruby_description["tab_type"] == "clustered" {
-
-			DB_TRX_ID := NewRecordField(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
-			fmap[counter] = "sys"
-			counter = counter + 1
-			sys_arr = append(sys_arr, DB_TRX_ID)
-			DB_ROLL_PTR := NewRecordField(position[counter], "DB_ROLL_PTR", "ROLL_PTR", "NOT_NULL")
-			fmap[counter] = "sys"
-			counter = counter + 1
-			sys_arr = append(sys_arr, DB_ROLL_PTR)
-			Log.Info("sys_arr的类型是=======>%T\n", sys_arr)
-			ruby_description["sys"] = sys_arr
-		}
-
-		var row_arr []*RecordField
-		if (ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
-			for _, v := range ruby_description["row"].([]interface{}) {
-				value := v.(map[string]interface{})
-				name := value["name"].(string)
-				prop := value["type"].([]interface{})
-				var properties string
-				for i := 1; i < len(prop); i++ {
-					properties += " " + prop[i].(string)
-				}
-				row := NewRecordField(position[counter], name, prop[0].(string), properties)
-				Log.Info("record() row type_definition =====>%+v\n", prop[0].(string))
-				Log.Info("record() row properties =====>%+v\n", properties)
-				fmap[counter] = "row"
-				row_arr = append(row_arr, row)
-				counter = counter + 1
-
-			}
-			Log.Info("row_arr的值=======>%+v\n", row_arr)
-			ruby_description["row"] = row_arr
-		}
-
-		Log.Info("make_record_description_SysTablesPrimary ruby_description:%s", ruby_description)
-		// println("fmap")
-		// for k, v := range fmap {
-		// 	println(k)
-		// 	println(v)
-		// }
-		return ruby_description
-	case *SysIndexesPrimary:
-		description := description.(*SysIndexesPrimary)
-		Log.Info("description:\n", description)
-		//转化成ruby那样的格式，统一下，要不后续不好处理
-		ruby_description = Restruct_Describer(*description)
-		Log.Info("ruby_description  的内容是=======>%v\n", ruby_description)
-		var counter int
-		counter = 0
-
-		var key_arr []*RecordField
-		for _, v := range ruby_description["key"].([]interface{}) {
-
-			value := v.(map[string]interface{})
-			prop := value["type"].([]interface{})
-			var properties string
-			for i := 1; i < len(prop); i++ {
-				properties += " " + prop[i].(string)
-			}
-			Log.Info("recordfield key is%d----------->%s", position[counter], value["name"].(string))
-			rf := NewRecordField(position[counter], value["name"].(string), prop[0].(string), properties)
-			Log.Info("record() key type_definition =====>%+v\n", prop[0].(string))
-			Log.Info("record() key properties =====>%+v\n", properties)
-
-			fmap[counter] = "key"
-			key_arr = append(key_arr, rf)
-			counter = counter + 1
-		}
-
-		ruby_description["key"] = key_arr
-
-		var sys_arr []*RecordField
-		// 叶子结点加上回滚段和事务id的值
-		if index.IsLeaf() && ruby_description["tab_type"] == "clustered" {
-
-			DB_TRX_ID := NewRecordField(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
-			fmap[counter] = "sys"
-			counter = counter + 1
-			sys_arr = append(sys_arr, DB_TRX_ID)
-			DB_ROLL_PTR := NewRecordField(position[counter], "DB_ROLL_PTR", "ROLL_PTR", "NOT_NULL")
-			fmap[counter] = "sys"
-			counter = counter + 1
-			sys_arr = append(sys_arr, DB_ROLL_PTR)
-			Log.Info("sys_arr的类型是=======>%T\n", sys_arr)
-			ruby_description["sys"] = sys_arr
-		}
-
-		var row_arr []*RecordField
-		if (ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
-			for _, v := range ruby_description["row"].([]interface{}) {
-				value := v.(map[string]interface{})
-				name := value["name"].(string)
-				prop := value["type"].([]interface{})
-				var properties string
-				for i := 1; i < len(prop); i++ {
-					properties += " " + prop[i].(string)
-				}
-				row := NewRecordField(position[counter], name, prop[0].(string), properties)
-				Log.Info("record() row type_definition =====>%+v\n", prop[0].(string))
-				Log.Info("record() row properties =====>%+v\n", properties)
-				fmap[counter] = "row"
-				row_arr = append(row_arr, row)
-				counter = counter + 1
-
-			}
-			Log.Info("row_arr的值=======>%+v\n", row_arr)
-			ruby_description["row"] = row_arr
-		}
-
-		// println("fmap")
-		// for k, v := range fmap {
-		// 	println(k)
-		// 	println(v)
-		// }
-		return ruby_description
-
-	default:
-		//  fmt.Println("description is of a different type%T", value)
-		fmt.Printf("\n")
-	}
-
-	return ruby_description
-}
 
 func (index *Index) Make_Record_Describer() interface{} {
 	if (index.Page.Space != nil) && index.Space.IsSystemSpace && index.PageHeader.Index_id != 0 {
@@ -858,17 +602,11 @@ func (index *Index) Make_Record_Describer() interface{} {
 func (index *Index) Infimum() *Record {
 	infimum := index.System_Record(index.Pos_Infimum())
 
-	// switch infimum.record.(type) {
-	// case *UserRecord:
-	// 	println(infimum.record.(*UserRecord).header.next)
-	// }
-
 	return infimum
 }
 
 func (index *Index) Supremum() *Record {
 	supremum := index.System_Record(index.Pos_Supremum())
-	Log.Info("supremum(),next=>%d", supremum.record.(*SystemRecord).header.Next)
 	return supremum
 }
 
@@ -985,8 +723,7 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 	nulls := []bool{}
 	externs := []bool{}
 	field_offsets := index.Record_Header_Redundant_Field_End_Offsets(header, offset)
-	Log.Info("record_header_redundant_additional的 header.heap number 内容是==================>%v\n", header.Heap_Number)
-	Log.Info("record_header_redundant_additional的 field_offsets 内容是==================>%v\n", field_offsets)
+
 	this_field_offset := 0
 	// var next_field_offset int
 	for i := 0; i < len(field_offsets); i++ {
@@ -994,10 +731,6 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 		switch header.Offset_size {
 		case 1:
 			next_field_offset := (field_offsets[i] & RECORD_REDUNDANT_OFF1_OFFSET_MASK)
-			Log.Info("record_header_redundant_additional的 RECORD_REDUNDANT_OFF1_OFFSET_MASK 内容是==================>%+v\n", RECORD_REDUNDANT_OFF1_OFFSET_MASK)
-			Log.Info("record_header_redundant_additional的 field_offsets[i] 内容是==================>%+v\n", field_offsets[i])
-			Log.Info("record_header_redundant_additional的 next_field_offset 内容是==================>%+v\n", next_field_offset)
-			Log.Info("record_header_redundant_additional的 this_field_offset 内容是==================>%+v\n", this_field_offset)
 
 			lengths = append(lengths, (next_field_offset - this_field_offset))
 			nulls = append(nulls, ((field_offsets[i] & RECORD_REDUNDANT_OFF1_NULL_MASK) != 0))
@@ -1012,11 +745,6 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 		}
 
 	}
-	Log.Info("record_header_redundant_additional的 lengths 内容是==================>%v\n", lengths)
-	Log.Info("record_header_redundant_additional的 nulls 内容是==================>%v\n", nulls)
-	Log.Info("record_header_redundant_additional的 externs 内容是==================>%v\n", externs)
-	Log.Info("record_header_redundant_additional的 record_format 内容是==================>%v\n", index.Record_Format)
-	Log.Info("record_header_redundant_additional的 record_describer 内容是==================>%v\n", index.record_describer)
 
 	index.Record_Format = index.Get_Record_Format()
 
@@ -1053,24 +781,15 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 		println("index page record_format is nil!!!!!!")
 		// 还不知道什么情况出触发这个条件，先panic
 		panic(-1)
-		// header.lengths = lengths
-		// header.nulls = nulls
-		// header.externs = externs
+
 	}
-	Log.Info("record_header_redundant_additional的 header.lengths 内容是==================>%v\n", header.Lengths)
-	Log.Info("record_header_redundant_additional的 header.nulls 内容是==================>%v\n", header.Nulls)
-	Log.Info("record_header_redundant_additional的 header.externs 内容是==================>%v\n", header.Externs)
 
 }
 
 func (index *Index) Record_Header_Redundant_Field_End_Offsets(header *RecordHeader, offset uint64) []int {
 	field_offsets := []int{}
-	Log.Info("record_header_redundant_field_end_offsets offset 内容是==================>%v\n", offset)
 	for i := 0; i < int(header.N_fields); i++ {
 		field_offsets = append(field_offsets, BufferReadAt(index.Page, int64(offset)-1, int64(header.Offset_size)))
-		Log.Info("record_header_redundant_field_end_offsets page number 是==================>%v\n", index.Page.Page_number)
-
-		Log.Info("record_header_redundant_field_end_offsets field_offsets 内容是==================>%v\n", field_offsets)
 		offset = offset - header.Offset_size
 	}
 	return field_offsets

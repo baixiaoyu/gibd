@@ -28,18 +28,13 @@ func (tree *BTreeIndex) Page(page_number uint64) *Index {
 func (tree *BTreeIndex) Each_Record(dh *DataDictionary) []*Record {
 	var records []*Record
 	pages_at_level0 := tree.Each_Page_At_Level(0, dh)
-	// for _, value := range pages_at_level0 {
-	// 	fmt.Printf("btreeindex pages_at_level0,========>%+v\n", value)
 
-	// }
-	Log.Info("btreeindex pages_at_level0 length,========>%+v\n", len(pages_at_level0))
 	for i := 0; i < len(pages_at_level0); i++ {
 		res := pages_at_level0[i].each_record()
 		for j := 0; j < len(res); j++ {
 			records = append(records, res[j])
 		}
 	}
-	Log.Info("btreeindex record length,========>%+v\n", len(records))
 
 	return records
 }
@@ -54,7 +49,6 @@ func (tree *BTreeIndex) Each_Page_At_Level(level int, dh *DataDictionary) []*Ind
 func (tree *BTreeIndex) Each_Page_From(idx *Index) []*Index {
 	var pages []*Index
 	for {
-		Log.Info("each_page_from  idx.next,========>%+v\n", idx.Page.FileHeader.Next)
 
 		if idx.Page.FileHeader.Page_type == 17855 {
 			pages = append(pages, idx)
@@ -70,28 +64,22 @@ func (tree *BTreeIndex) Each_Page_From(idx *Index) []*Index {
 }
 
 func (tree *BTreeIndex) Min_Page_At_Level(level int) *Index {
-	// fmt.Printf("min_page_at_level get root min_record root number is ==>%d\n", tree.Root.Page.Page_number)
-	// fmt.Printf("min_page_at_level level is ==>%d\n", level)
+
 	root_index_page := tree.Root
-	// fmt.Printf("root_index_page ,========>%+v\n", root_index_page)
+
 	record := root_index_page.Min_Record()
-	// fmt.Printf("min_page_at_level get record,========>%+v\n", record)
-	// fmt.Printf("min_page_at_level ,idx.pageHeader.level========>%+v\n", root_index_page.PageHeader.Level)
 
 	for record != nil && root_index_page.PageHeader.Level > uint64(level) {
 		switch record.record.(type) {
 		case *UserRecord:
 			child_page_number := record.record.(*UserRecord).Child_page_number
 
-			// if child_page_number > 0 {
 			idx := tree.Page(child_page_number)
 
 			record = idx.Min_Record()
 			if idx.PageHeader.Level == uint64(level) {
 				return idx
 			}
-
-			// }
 
 		}
 
