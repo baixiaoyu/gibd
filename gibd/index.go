@@ -269,7 +269,6 @@ func (index *Index) each_record() []*Record {
 	for ; r != nil; rc.Record, r = r, rc.record() {
 		records = append(records, r)
 	}
-	Log.Info("each_record_size is ========>%+v\n", len(records))
 
 	return records
 
@@ -369,6 +368,7 @@ func (index *Index) record(offset uint64) *Record {
 	}
 	all_field, key_arr, row_arr := index.Get_Record_Fields_From_Format()
 	if all_field == nil {
+		//读取建表语句记录，然后根据header获取的具体长度信息，获取字段的值，然后创建记录对象
 		//没有字段元数据的时候，获取下记录的长度的准确值
 		// 为了测试方便，我们使用固定的表结构
 		// Create Table: CREATE TABLE `dba_user5` (

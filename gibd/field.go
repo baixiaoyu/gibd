@@ -29,11 +29,7 @@ type RecordField struct {
 
 func NewRecordField(position int, name string, type_definition string, properties string) *RecordField {
 	nullable := true
-	// if strings.Contains(properties, "NOT_NULL") {
-	// 	nullable = false
-	// } else {
-	// 	nullable = true
-	// }
+
 	result := strings.Index(properties, "NOT_NULL")
 	if result >= 0 {
 		nullable = false

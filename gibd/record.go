@@ -111,18 +111,21 @@ func NewSystemRecord(offset uint64, header *RecordHeader, next uint64, data []by
 }
 
 type UserRecord struct {
-	record_type       string
-	format            string
-	offset            uint64
-	header            *RecordHeader
-	next              uint64
-	key               []*FieldDescriptor
-	row               []*FieldDescriptor
-	sys               []*FieldDescriptor
-	Child_page_number uint64   `json:"child_page_number"`
+	record_type string
+	format      string
+	offset      uint64
+	header      *RecordHeader
+	next        uint64
+	key         []*FieldDescriptor
+	row         []*FieldDescriptor
+	sys         []*FieldDescriptor
+	//非叶子结点上使用child_page_number
+	Child_page_number uint64 `json:"child_page_number"`
+	//叶子结点记录系统字段
 	Transaction_id    uint64   `json:"trx_id"`
 	Roll_pointer      *Pointer `json:"roll_pointer"`
 	Length            uint64   `json:"record_length"`
+	Is_Cluster_Record bool
 }
 
 func NewUserRecord(format string, offset uint64, header *RecordHeader, next uint64) *UserRecord {
@@ -140,7 +143,7 @@ func (s *UserRecord) String() string {
 		s.record_type, s.format, s.offset, s.next, s.Child_page_number, s.Transaction_id, s.Roll_pointer, s.Length)
 }
 
-// 列名以及对应的值
+// 列名以及对应的值,此处应该包含RecordField 对象，不是进行重复定义
 type FieldDescriptor struct {
 	name       string
 	field_type string
