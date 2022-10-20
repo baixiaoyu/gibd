@@ -19,6 +19,34 @@ func NewExternReference(space_id uint64, page_number uint64, offset uint64, leng
 	return &ExternReference{space_id: space_id, page_number: page_number, offset: offset, length: length}
 }
 
+// 列名以及对应的值,此处应该包含RecordField 对象，不是进行重复定义
+type FieldDescriptor struct {
+	name       string
+	field_type string
+	value      interface{}
+	extern     *ExternReference
+}
+
+func NewFieldDescriptor(name string, field_type string, value interface{}, extern *ExternReference) *FieldDescriptor {
+	return &FieldDescriptor{
+		name:       name,
+		field_type: field_type,
+		value:      value,
+		extern:     extern,
+	}
+}
+
+type Field struct {
+	FieldName string `json:"fieldname"`
+	// FieldDesc string `json:"fieldesc"`
+	DataType   string `json:"datatype"`
+	Properties string `json:Properties`
+	IsNull     string `json:"isnull"`
+	Length     int    `json:"length"`
+	Is_key     bool   `json:"is_key"`
+}
+
+// Field 这两个冲突
 type RecordField struct {
 	Extern    ExternReference
 	position  int

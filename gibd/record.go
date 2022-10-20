@@ -80,14 +80,12 @@ func (record *Record) Get_Fields_And_Value_Map() map[string]interface{} {
 	rows := record.record.(*UserRecord).row
 
 	for _, value := range keys {
-		Log.Info("get_fields() keys name====>%+v\n", value.name)
-		Log.Info("get_fields() keys value====>%+v\n", value.value)
+
 		fields_map[value.name] = value.value
 	}
 
 	for _, value := range rows {
-		Log.Info("get_fields() rows name====>%+v\n", value.name)
-		Log.Info("get_fields() rows value====>%+v\n", value.value)
+
 		fields_map[value.name] = value.value
 	}
 	return fields_map
@@ -141,21 +139,4 @@ func NewUserRecord(format string, offset uint64, header *RecordHeader, next uint
 func (s *UserRecord) String() string {
 	return fmt.Sprintf("[record_type => %v, format => %v, offset => %v, next => %v, child_page_number=> %v transaction_id=> %v roll_pointer=>%v length=> %v]",
 		s.record_type, s.format, s.offset, s.next, s.Child_page_number, s.Transaction_id, s.Roll_pointer, s.Length)
-}
-
-// 列名以及对应的值,此处应该包含RecordField 对象，不是进行重复定义
-type FieldDescriptor struct {
-	name       string
-	field_type string
-	value      interface{}
-	extern     *ExternReference
-}
-
-func NewFieldDescriptor(name string, field_type string, value interface{}, extern *ExternReference) *FieldDescriptor {
-	return &FieldDescriptor{
-		name:       name,
-		field_type: field_type,
-		value:      value,
-		extern:     extern,
-	}
 }
