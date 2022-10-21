@@ -2,7 +2,7 @@ package gibd
 
 type RecordCursor struct {
 	Initial   bool
-	Index     *Index
+	Index     *IndexPage
 	Direction string
 	Record    *Record
 }
@@ -21,7 +21,7 @@ func (rc *RecordCursor) Initial_Record(offset uint64) *Record {
 	}
 }
 
-func NewRecordCursor(index *Index, offset uint64, direction string) *RecordCursor {
+func NewRecordCursor(index *IndexPage, offset uint64, direction string) *RecordCursor {
 	Initial := true
 	Index := index
 	Direction := direction
@@ -30,7 +30,7 @@ func NewRecordCursor(index *Index, offset uint64, direction string) *RecordCurso
 	return &a
 }
 
-func (index *Index) Record_Cursor(offset uint64, direction string) *RecordCursor {
+func (index *IndexPage) Record_Cursor(offset uint64, direction string) *RecordCursor {
 
 	return NewRecordCursor(index, offset, direction)
 }

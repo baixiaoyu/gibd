@@ -39,7 +39,7 @@ type TimeStampType struct {
 func NewTimeStampType() *TimeStampType {
 	return &TimeStampType{width: 4}
 }
-func (timestamp *TimeStampType) Value(data []byte, index *Index) *TimeStampType {
+func (timestamp *TimeStampType) Value(data []byte, index *IndexPage) *TimeStampType {
 
 	ts := ParseMySQLTimeStamp(data)
 	return ts
@@ -60,7 +60,7 @@ type DateTimeType struct {
 func NewDateTimeType() *DateTimeType {
 	return &DateTimeType{width: 8}
 }
-func (datetime *DateTimeType) Value(data []byte, index *Index) *DateTimeType {
+func (datetime *DateTimeType) Value(data []byte, index *IndexPage) *DateTimeType {
 	dt := ParseMySQLDateTime(data)
 	return dt
 }
@@ -88,7 +88,7 @@ func NewIntegerType(base_type string, modifiers string, properties string) *Inte
 }
 
 // 这个是不对的，需要使用ParseMySQLInt 方法
-func (integer *IntegerType) Value(data []byte, index *Index) int64 {
+func (integer *IntegerType) Value(data []byte, index *IndexPage) int64 {
 	nbits := integer.width * 8
 	if integer.unsigned {
 		return integer.Get_Uint(data, nbits, index)
@@ -98,10 +98,10 @@ func (integer *IntegerType) Value(data []byte, index *Index) int64 {
 
 }
 
-func (integer *IntegerType) Get_Uint(data []byte, nbits int, index *Index) int64 {
+func (integer *IntegerType) Get_Uint(data []byte, nbits int, index *IndexPage) int64 {
 	return int64(BytesToUIntLittleEndian(data))
 }
-func (integer *IntegerType) Get_Int(data []byte, nbits int, index *Index) int64 {
+func (integer *IntegerType) Get_Int(data []byte, nbits int, index *IndexPage) int64 {
 	return int64(BytesToIntLittleEndian(index.Page, data))
 }
 

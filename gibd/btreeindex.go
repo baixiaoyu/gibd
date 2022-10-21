@@ -2,7 +2,7 @@ package gibd
 
 //表示树，针对树的一些操作
 type BTreeIndex struct {
-	Root             *Index //相当于节点
+	Root             *IndexPage //相当于节点
 	Space            *Space
 	Record_describer interface{}
 }
@@ -18,7 +18,7 @@ func NewBTreeIndex(space *Space, root_page_number uint64, record_describer inter
 	return tree
 }
 
-func (tree *BTreeIndex) Page(page_number uint64) *Index {
+func (tree *BTreeIndex) Page(page_number uint64) *IndexPage {
 	page := tree.Space.Page(page_number)
 	page.record_describer = tree.Record_describer
 	i := NewIndex(page)
@@ -39,15 +39,15 @@ func (tree *BTreeIndex) Each_Record(dh *DataDictionary) []*Record {
 	return records
 }
 
-func (tree *BTreeIndex) Each_Page_At_Level(level int, dh *DataDictionary) []*Index {
+func (tree *BTreeIndex) Each_Page_At_Level(level int, dh *DataDictionary) []*IndexPage {
 	min_page := tree.Min_Page_At_Level(level)
 	min_page.dh = dh
 	pages := tree.Each_Page_From(min_page)
 	return pages
 }
 
-func (tree *BTreeIndex) Each_Page_From(idx *Index) []*Index {
-	var pages []*Index
+func (tree *BTreeIndex) Each_Page_From(idx *IndexPage) []*IndexPage {
+	var pages []*IndexPage
 	for {
 
 		if idx.Page.FileHeader.Page_type == 17855 {
@@ -63,7 +63,7 @@ func (tree *BTreeIndex) Each_Page_From(idx *Index) []*Index {
 	return pages
 }
 
-func (tree *BTreeIndex) Min_Page_At_Level(level int) *Index {
+func (tree *BTreeIndex) Min_Page_At_Level(level int) *IndexPage {
 
 	root_index_page := tree.Root
 

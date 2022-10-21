@@ -101,7 +101,7 @@ func Parse_Type_Definition(type_definition string) (string, string) {
 
 }
 
-func (rf *RecordFieldMeta) Value(offset uint64, record *UserRecord, index *Index) (interface{}, uint64) {
+func (rf *RecordFieldMeta) Value(offset uint64, record *UserRecord, index *IndexPage) (interface{}, uint64) {
 	if record == nil {
 		return nil, 0
 	}
@@ -109,7 +109,7 @@ func (rf *RecordFieldMeta) Value(offset uint64, record *UserRecord, index *Index
 	return rf.Value_By_Length(offset, rf.length(record), index)
 }
 
-func (rf *RecordFieldMeta) Value_By_Length(offset uint64, field_length int64, index *Index) (interface{}, uint64) {
+func (rf *RecordFieldMeta) Value_By_Length(offset uint64, field_length int64, index *IndexPage) (interface{}, uint64) {
 
 	switch rf.DataType.(type) {
 	case *IntegerType:
@@ -172,14 +172,14 @@ func (rf *RecordFieldMeta) Is_Extern(record *UserRecord) bool {
 	return false
 }
 
-func (rf *RecordFieldMeta) extern(offset int64, index *Index, record *UserRecord) *ExternReference {
+func (rf *RecordFieldMeta) extern(offset int64, index *IndexPage, record *UserRecord) *ExternReference {
 	if rf.Is_Extern(record) {
 		return rf.Read_Extern(offset, index)
 	}
 	return nil
 }
 
-func (rf *RecordFieldMeta) Read_Extern(offset int64, index *Index) *ExternReference {
+func (rf *RecordFieldMeta) Read_Extern(offset int64, index *IndexPage) *ExternReference {
 	space_id := BufferReadAt(index.Page, offset, 4)
 	page_number := BufferReadAt(index.Page, offset+4, 4)
 	e_offset := BufferReadAt(index.Page, offset+8, 4)
@@ -206,7 +206,7 @@ func (rf *RecordFieldMeta) Has_Method(data_type interface{}, method_name string)
 	return false
 }
 
-func (rf *RecordFieldMeta) Read(offset uint64, field_length int64, index *Index) []byte {
+func (rf *RecordFieldMeta) Read(offset uint64, field_length int64, index *IndexPage) []byte {
 
 	return (ReadBytes(index.Page, int64(offset), field_length))
 }

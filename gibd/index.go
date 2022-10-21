@@ -45,7 +45,8 @@ type PageHeader struct {
 // # header, fixed-width system records (infimum and supremum), user records
 // # (the actual data) which grow ascending by offset, free space, the page
 // # directory which grows descending by offset, and the FIL trailer.
-type Index struct {
+//IndexPge
+type IndexPage struct {
 	Page *Page
 	// recordHeader     *RecordHeader
 	SystemRecords    []SystemRecord `json:"systemrecords"`
@@ -61,30 +62,30 @@ type Index struct {
 	dh               *DataDictionary        //系统表空间的时候使用，用来获取一些元信息，如果是普通的表空间，构造record_format即可
 }
 
-func NewIndex(page *Page) *Index {
+func NewIndex(page *Page) *IndexPage {
 
-	index := &Index{Page: page}
+	index := &IndexPage{Page: page}
 	index.Space = page.Space
 	index.Index_Header()
 	return index
 }
 
-func (index *Index) Pos_Index_Header() uint64 {
+func (index *IndexPage) Pos_Index_Header() uint64 {
 	return Pos_Page_Body()
 }
-func (index *Index) Size_Index_Header() uint64 { //36
+func (index *IndexPage) Size_Index_Header() uint64 { //36
 	return 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 8 + 2 + 8
 }
 
-func (index *Index) Pos_Fseg_Header() uint64 {
+func (index *IndexPage) Pos_Fseg_Header() uint64 {
 	return index.Pos_Index_Header() + index.Size_Index_Header()
 }
-func (index *Index) Size_Fseg_Header() uint64 {
+func (index *IndexPage) Size_Fseg_Header() uint64 {
 	return 2 * FsegEntry_SIZE
 }
 
 //compact 2+3
-func (index *Index) Size_Record_Header() uint64 {
+func (index *IndexPage) Size_Record_Header() uint64 {
 	switch index.PageHeader.Format {
 	case "compact":
 		return RECORD_NEXT_SIZE + RECORD_COMPACT_BITS_SIZE
@@ -94,7 +95,7 @@ func (index *Index) Size_Record_Header() uint64 {
 	return 0
 }
 
-func (index *Index) Size_Mum_Record_Header_Additional() uint64 {
+func (index *IndexPage) Size_Mum_Record_Header_Additional() uint64 {
 
 	switch index.PageHeader.Format {
 	case "compact":
@@ -104,10 +105,10 @@ func (index *Index) Size_Mum_Record_Header_Additional() uint64 {
 	}
 	return 0
 }
-func (index *Index) Size_Mum_Record() uint64 {
+func (index *IndexPage) Size_Mum_Record() uint64 {
 	return 8
 }
-func (index *Index) Pos_Infimum() uint64 {
+func (index *IndexPage) Pos_Infimum() uint64 {
 	a := index.Pos_Records()
 	b := index.Size_Record_Header()
 	c := index.Size_Mum_Record_Header_Additional()
@@ -115,49 +116,49 @@ func (index *Index) Pos_Infimum() uint64 {
 	return a + b + c
 }
 
-func (index *Index) Pos_Supremum() uint64 {
+func (index *IndexPage) Pos_Supremum() uint64 {
 	return index.Pos_Infimum() + index.Size_Record_Header() + index.Size_Mum_Record_Header_Additional() + index.Size_Mum_Record()
 }
 
-func (index *Index) Pos_Records() uint64 { //20+36+38
+func (index *IndexPage) Pos_Records() uint64 { //20+36+38
 	return index.Page.Size_Fil_Header() + index.Size_Index_Header() + index.Size_Fseg_Header()
 }
 
-func (index *Index) Pos_User_Records() uint64 {
+func (index *IndexPage) Pos_User_Records() uint64 {
 	return index.Pos_Supremum() + index.Size_Mum_Record()
 }
 
-func (index *Index) Pos_Directory() uint64 {
+func (index *IndexPage) Pos_Directory() uint64 {
 	return index.Page.Pos_Fil_Trailer()
 }
 
-func (index *Index) Header_Space() uint64 {
+func (index *IndexPage) Header_Space() uint64 {
 	return index.Pos_User_Records()
 }
 
-func (index *Index) Directory_Slots() uint64 {
+func (index *IndexPage) Directory_Slots() uint64 {
 	return index.PageHeader.N_dir_slots
 }
-func (index *Index) Directory_Space() uint64 {
+func (index *IndexPage) Directory_Space() uint64 {
 	return index.Directory_Slots() * PAGE_DIR_SLOT_SIZE
 }
 
-func (index *Index) Trailer_Space() uint64 {
+func (index *IndexPage) Trailer_Space() uint64 {
 	return index.Page.Size_Fil_Trailer()
 }
 
-func (index *Index) Free_Space() uint64 {
+func (index *IndexPage) Free_Space() uint64 {
 	return index.PageHeader.Garbage_size + (index.size - index.Page.Size_Fil_Trailer() - index.Directory_Space() - index.PageHeader.Heap_top)
 }
 
-func (index *Index) Used_Space() uint64 {
+func (index *IndexPage) Used_Space() uint64 {
 	return index.size - index.Free_Space()
 }
-func (index *Index) Record_Space() uint64 {
+func (index *IndexPage) Record_Space() uint64 {
 	return index.Used_Space() - index.Header_Space() - index.Directory_Space() - index.Trailer_Space()
 }
 
-func (index *Index) Space_Per_Record() uint64 {
+func (index *IndexPage) Space_Per_Record() uint64 {
 	if index.PageHeader.N_recs > 0 {
 		return index.Record_Space() / index.PageHeader.N_recs
 	} else {
@@ -166,7 +167,7 @@ func (index *Index) Space_Per_Record() uint64 {
 }
 
 // index_header
-func (index *Index) Index_Header() {
+func (index *IndexPage) Index_Header() {
 	// jsons, _ := json.Marshal(index.Page)
 
 	n_dir_slots := uint64(BufferReadAt(index.Page, int64(index.Pos_Index_Header()), 2))
@@ -197,7 +198,7 @@ func (index *Index) Index_Header() {
 
 }
 
-func (index *Index) Fseg_Header() {
+func (index *IndexPage) Fseg_Header() {
 	//get fseg header,put them together,index的叶子和非叶子节点使用的是2个segment管理
 	// pos 74开始
 	pos := int64(index.Pos_Fseg_Header())
@@ -227,7 +228,7 @@ func (index *Index) Fseg_Header() {
 	index.FsegHeader = *fsegHeader
 }
 
-func (index *Index) Page_Directory() {
+func (index *IndexPage) Page_Directory() {
 	pos := int64(index.Pos_Directory())
 
 	numSlot := index.Directory_Slots()
@@ -239,12 +240,12 @@ func (index *Index) Page_Directory() {
 	}
 }
 
-func (index *Index) Is_Root() bool {
+func (index *IndexPage) Is_Root() bool {
 	return index.Page.FileHeader.Prev == 0 && index.Page.FileHeader.Next == 0
 
 }
 
-func (index *Index) IsLeaf() bool {
+func (index *IndexPage) IsLeaf() bool {
 
 	if index.PageHeader.Level == 0 {
 		return true
@@ -253,13 +254,13 @@ func (index *Index) IsLeaf() bool {
 	}
 }
 
-func (index *Index) page(page_number uint64) *Page {
+func (index *IndexPage) page(page_number uint64) *Page {
 	page := index.Space.Page(page_number)
 	page.record_describer = index.record_describer
 	return page
 }
 
-func (index *Index) each_record() []*Record {
+func (index *IndexPage) each_record() []*Record {
 	var records []*Record
 
 	rc := index.Record_Cursor(min, "forward")
@@ -275,7 +276,7 @@ func (index *Index) each_record() []*Record {
 }
 
 //Return the minimum record on this page.不是Infimum,是用户的最小值
-func (index *Index) Min_Record() *Record {
+func (index *IndexPage) Min_Record() *Record {
 
 	infimum := index.Infimum()
 
@@ -291,7 +292,7 @@ func (index *Index) Min_Record() *Record {
 }
 
 //获取用户的最大值
-func (index *Index) Max_Record() *Record {
+func (index *IndexPage) Max_Record() *Record {
 	//max_cursor := index.record_cursor(index.supremum().system_record.offset, "backward")
 	// max := max_cursor.prev_record
 	// if max != index.infimum() {
@@ -301,7 +302,7 @@ func (index *Index) Max_Record() *Record {
 
 }
 
-func (index *Index) Get_Record_Fields_From_Format() ([]*RecordFieldMeta, []*RecordFieldMeta, []*RecordFieldMeta) {
+func (index *IndexPage) Get_Record_Fields_From_Format() ([]*RecordFieldMeta, []*RecordFieldMeta, []*RecordFieldMeta) {
 	var res_arr []*RecordFieldMeta
 	//添加判断，如果没有record_format就是表示普通的表空间，普通表空间没有办法获取字段类型的
 	if index.Record_Format == nil {
@@ -332,7 +333,7 @@ func (index *Index) Get_Record_Fields_From_Format() ([]*RecordFieldMeta, []*Reco
 
 }
 
-func (index *Index) record(offset uint64) *Record {
+func (index *IndexPage) record(offset uint64) *Record {
 	var rec_len uint64
 
 	if offset == index.Pos_Infimum() {
@@ -563,7 +564,7 @@ func (index *Index) record(offset uint64) *Record {
 	return NewRecord(index.Page, this_record)
 }
 
-func (index *Index) Get_Record_Format() map[string]interface{} {
+func (index *IndexPage) Get_Record_Format() map[string]interface{} {
 
 	if index.Record_Format != nil {
 		return index.Record_Format
@@ -574,7 +575,7 @@ func (index *Index) Get_Record_Format() map[string]interface{} {
 	return nil
 }
 
-func (index *Index) Get_Record_Describer() interface{} {
+func (index *IndexPage) Get_Record_Describer() interface{} {
 	if index.record_describer != nil {
 		return index.record_describer
 	} else {
@@ -588,7 +589,7 @@ func (index *Index) Get_Record_Describer() interface{} {
 
 var fmap = make(map[int]string)
 
-func (index *Index) Make_Record_Describer() interface{} {
+func (index *IndexPage) Make_Record_Describer() interface{} {
 	if (index.Page.Space != nil) && index.Space.IsSystemSpace && index.PageHeader.Index_id != 0 {
 		record_describer := Record_Describer_By_Index_Id(index.dh, index.PageHeader.Index_id)
 		return record_describer
@@ -599,18 +600,18 @@ func (index *Index) Make_Record_Describer() interface{} {
 	return nil
 }
 
-func (index *Index) Infimum() *Record {
+func (index *IndexPage) Infimum() *Record {
 	infimum := index.System_Record(index.Pos_Infimum())
 
 	return infimum
 }
 
-func (index *Index) Supremum() *Record {
+func (index *IndexPage) Supremum() *Record {
 	supremum := index.System_Record(index.Pos_Supremum())
 	return supremum
 }
 
-func (index *Index) System_Record(offset uint64) *Record {
+func (index *IndexPage) System_Record(offset uint64) *Record {
 
 	header, _ := index.Record_Header(offset)
 	// index.recordHeader = header
@@ -620,7 +621,7 @@ func (index *Index) System_Record(offset uint64) *Record {
 	return record
 }
 
-func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
+func (index *IndexPage) Record_Header(offset uint64) (*RecordHeader, uint64) {
 
 	header := NewRecordHeader(offset)
 
@@ -681,7 +682,7 @@ func (index *Index) Record_Header(offset uint64) (*RecordHeader, uint64) {
 	return header, header_len
 }
 
-func (index *Index) Record_Header_Compact_Additional(header *RecordHeader, offset uint64) {
+func (index *IndexPage) Record_Header_Compact_Additional(header *RecordHeader, offset uint64) {
 	switch header.Record_Type {
 	// node_pointer 是中间节点记录 conventional 是正常的记录
 	case "conventional", "node_pointer":
@@ -702,7 +703,7 @@ func (index *Index) Record_Header_Compact_Additional(header *RecordHeader, offse
 
 }
 
-func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) string {
+func (index *IndexPage) Record_Header_Compact_Null_Bitmap(offset uint64) string {
 	//fields := index.record_fields()
 	//size = fields.count(is_nullable())
 	//方便测试，将null bitmap和extern的信息放在了一起，默认测试分别占用1个字节，根据具体情况修改，因为没有字段元数据信息
@@ -713,12 +714,12 @@ func (index *Index) Record_Header_Compact_Null_Bitmap(offset uint64) string {
 	return nullString
 }
 
-func (index *Index) Record_Header_Compact_Variable_Lengths_And_Externs(offset uint64, header_nulls string) (map[string]int, string) {
+func (index *IndexPage) Record_Header_Compact_Variable_Lengths_And_Externs(offset uint64, header_nulls string) (map[string]int, string) {
 	return nil, ""
 
 }
 
-func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, offset uint64) {
+func (index *IndexPage) Record_Header_Redundant_Additional(header *RecordHeader, offset uint64) {
 	lengths := []int{}
 	nulls := []bool{}
 	externs := []bool{}
@@ -786,7 +787,7 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 
 }
 
-func (index *Index) Record_Header_Redundant_Field_End_Offsets(header *RecordHeader, offset uint64) []int {
+func (index *IndexPage) Record_Header_Redundant_Field_End_Offsets(header *RecordHeader, offset uint64) []int {
 	field_offsets := []int{}
 	for i := 0; i < int(header.N_fields); i++ {
 		field_offsets = append(field_offsets, BufferReadAt(index.Page, int64(offset)-1, int64(header.Offset_size)))
@@ -795,7 +796,7 @@ func (index *Index) Record_Header_Redundant_Field_End_Offsets(header *RecordHead
 	return field_offsets
 }
 
-func (f *Index) Dump() {
+func (f *IndexPage) Dump() {
 	println("Index dump:")
 
 	data, _ := json.Marshal(f)

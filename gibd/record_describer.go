@@ -9,7 +9,7 @@ import (
 
 // 记录描述符这应该重构下，描述符这有点混乱
 //只实现了系统表systable sysindex 的description
-func (index *Index) Make_Record_Description() map[string]interface{} {
+func (index *IndexPage) Make_Record_Description() map[string]interface{} {
 	var position [1024]int
 	for i := 0; i <= RECORD_MAX_N_FIELDS; i++ {
 		position[i] = i

@@ -361,7 +361,7 @@ func ParseMySQLDateTime(bytes []byte) *DateTimeType {
 	return dt
 
 }
-func ParseMySQLInt(index *Index, bytes []byte) int {
+func ParseMySQLInt(index *IndexPage, bytes []byte) int {
 	var b [4]byte
 	var v2 = 128
 	b[0] = uint8(v2)
