@@ -81,12 +81,12 @@ func (record *Record) Get_Fields_And_Value_Map() map[string]interface{} {
 
 	for _, value := range keys {
 
-		fields_map[value.name] = value.value
+		fields_map[value.FieldMeta.Name] = value.Value
 	}
 
 	for _, value := range rows {
 
-		fields_map[value.name] = value.value
+		fields_map[value.FieldMeta.Name] = value.Value
 	}
 	return fields_map
 

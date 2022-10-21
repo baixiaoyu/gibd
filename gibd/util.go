@@ -433,7 +433,7 @@ func RemoveRepeatedElement(arr []uint64) (newArr []uint64) {
 // }
 
 //  字段数组中按字段的position进行排序，这样，就能按顺序进行字段值的获取
-type FiledSort []*RecordField
+type FiledSort []*RecordFieldMeta
 
 func (s FiledSort) Len() int {
 
@@ -447,7 +447,7 @@ func (s FiledSort) Swap(i, j int) {
 func (s FiledSort) Less(i, j int) bool {
 	//按字段比较大小,此处是降序排序
 	//返回数组中下标为i的数据是否小于下标为j的数据
-	return s[i].position < s[j].position
+	return s[i].Position < s[j].Position
 }
 
 func BytesToUint32(b []byte) uint32 {

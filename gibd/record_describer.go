@@ -32,7 +32,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		var counter int
 		counter = 0
 
-		var key_arr []*RecordField
+		var key_arr []*RecordFieldMeta
 		for _, v := range ruby_description["key"].([]interface{}) {
 			//key_arr = []*Recordfield{}
 
@@ -42,7 +42,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			for i := 1; i < len(prop); i++ {
 				properties += " " + prop[i].(string)
 			}
-			rf := NewRecordField(position[counter], value["name"].(string), prop[0].(string), properties)
+			rf := NewRecordFieldMeta(position[counter], value["name"].(string), prop[0].(string), properties)
 
 			fmap[counter] = "key"
 			key_arr = append(key_arr, rf)
@@ -52,14 +52,14 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		ruby_description["key"] = key_arr
 
 		//叶子结点加上系统字段
-		var sys_arr []*RecordField
+		var sys_arr []*RecordFieldMeta
 		if index.IsLeaf() && ruby_description["tab_type"] == "clustered" {
 
-			DB_TRX_ID := NewRecordField(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
+			DB_TRX_ID := NewRecordFieldMeta(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
 			fmap[counter] = "sys"
 			counter = counter + 1
 			sys_arr = append(sys_arr, DB_TRX_ID)
-			DB_ROLL_PTR := NewRecordField(position[counter], "DB_ROLL_PTR", "ROLL_PTR", "NOT_NULL")
+			DB_ROLL_PTR := NewRecordFieldMeta(position[counter], "DB_ROLL_PTR", "ROLL_PTR", "NOT_NULL")
 			fmap[counter] = "sys"
 			counter = counter + 1
 			sys_arr = append(sys_arr, DB_ROLL_PTR)
@@ -67,7 +67,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			ruby_description["sys"] = sys_arr
 		}
 
-		var row_arr []*RecordField
+		var row_arr []*RecordFieldMeta
 		if (ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
 			for _, v := range ruby_description["row"].([]interface{}) {
 				value := v.(map[string]interface{})
@@ -77,7 +77,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 				for i := 1; i < len(prop); i++ {
 					properties += " " + prop[i].(string)
 				}
-				row := NewRecordField(position[counter], name, prop[0].(string), properties)
+				row := NewRecordFieldMeta(position[counter], name, prop[0].(string), properties)
 
 				fmap[counter] = "row"
 				row_arr = append(row_arr, row)
@@ -97,7 +97,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		var counter int
 		counter = 0
 
-		var key_arr []*RecordField
+		var key_arr []*RecordFieldMeta
 		for _, v := range ruby_description["key"].([]interface{}) {
 
 			value := v.(map[string]interface{})
@@ -106,7 +106,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			for i := 1; i < len(prop); i++ {
 				properties += " " + prop[i].(string)
 			}
-			rf := NewRecordField(position[counter], value["name"].(string), prop[0].(string), properties)
+			rf := NewRecordFieldMeta(position[counter], value["name"].(string), prop[0].(string), properties)
 
 			fmap[counter] = "key"
 			key_arr = append(key_arr, rf)
@@ -115,15 +115,15 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 
 		ruby_description["key"] = key_arr
 
-		var sys_arr []*RecordField
+		var sys_arr []*RecordFieldMeta
 		// 叶子结点加上回滚段和事务id的值
 		if index.IsLeaf() && ruby_description["tab_type"] == "clustered" {
 
-			DB_TRX_ID := NewRecordField(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
+			DB_TRX_ID := NewRecordFieldMeta(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
 			fmap[counter] = "sys"
 			counter = counter + 1
 			sys_arr = append(sys_arr, DB_TRX_ID)
-			DB_ROLL_PTR := NewRecordField(position[counter], "DB_ROLL_PTR", "ROLL_PTR", "NOT_NULL")
+			DB_ROLL_PTR := NewRecordFieldMeta(position[counter], "DB_ROLL_PTR", "ROLL_PTR", "NOT_NULL")
 			fmap[counter] = "sys"
 			counter = counter + 1
 			sys_arr = append(sys_arr, DB_ROLL_PTR)
@@ -131,7 +131,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			ruby_description["sys"] = sys_arr
 		}
 
-		var row_arr []*RecordField
+		var row_arr []*RecordFieldMeta
 		if (ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
 			for _, v := range ruby_description["row"].([]interface{}) {
 				value := v.(map[string]interface{})
@@ -141,9 +141,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 				for i := 1; i < len(prop); i++ {
 					properties += " " + prop[i].(string)
 				}
-				row := NewRecordField(position[counter], name, prop[0].(string), properties)
-				Log.Info("record() row type_definition =====>%+v\n", prop[0].(string))
-				Log.Info("record() row properties =====>%+v\n", properties)
+				row := NewRecordFieldMeta(position[counter], name, prop[0].(string), properties)
 				fmap[counter] = "row"
 				row_arr = append(row_arr, row)
 				counter = counter + 1
@@ -191,11 +189,17 @@ func Restruct_Describer(a interface{}) map[string]interface{} {
 				x := val.Field(i).Interface().(string)
 				str_type = `{"tab_type":"` + x + `",`
 			} else {
-				fieldstr := val.Field(i).Interface().(Field)
-				if fieldstr.Is_key {
-					str_key += `{"name":"` + fieldstr.FieldName + `",` + `"type":["` + fieldstr.DataType + `","` + fieldstr.Properties + `","` + fieldstr.IsNull + `"]},`
+				fieldstr := val.Field(i).Interface().(RecordFieldMeta)
+				var nullstring string
+				if fieldstr.Nullable {
+					nullstring = "null"
 				} else {
-					str_row += `{"name":"` + fieldstr.FieldName + `",` + `"type":["` + fieldstr.DataType + `","` + fieldstr.Properties + `","` + fieldstr.IsNull + `"]},`
+					nullstring = "not null"
+				}
+				if fieldstr.IsKey {
+					str_key += `{"name":"` + fieldstr.Name + `",` + `"type":["` + fieldstr.DataType.(string) + `","` + fieldstr.Properties + `","` + nullstring + `"]},`
+				} else {
+					str_row += `{"name":"` + fieldstr.Name + `",` + `"type":["` + fieldstr.DataType.(string) + `","` + fieldstr.Properties + `","` + nullstring + `"]},`
 				}
 			}
 		}

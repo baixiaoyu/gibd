@@ -301,28 +301,28 @@ func (index *Index) Max_Record() *Record {
 
 }
 
-func (index *Index) Get_Record_Fields_From_Format() ([]*RecordField, []*RecordField, []*RecordField) {
-	var res_arr []*RecordField
+func (index *Index) Get_Record_Fields_From_Format() ([]*RecordFieldMeta, []*RecordFieldMeta, []*RecordFieldMeta) {
+	var res_arr []*RecordFieldMeta
 	//添加判断，如果没有record_format就是表示普通的表空间，普通表空间没有办法获取字段类型的
 	if index.Record_Format == nil {
 		return nil, nil, nil
 	}
-	key_arr := index.Record_Format["key"].([]*RecordField)
+	key_arr := index.Record_Format["key"].([]*RecordFieldMeta)
 	for i := 0; i < len(key_arr); i++ {
 		res_arr = append(res_arr, key_arr[i])
 	}
 
 	if index.Record_Format["sys"] != nil {
-		sys_arr := index.Record_Format["sys"].([]*RecordField)
+		sys_arr := index.Record_Format["sys"].([]*RecordFieldMeta)
 		for i := 0; i < len(sys_arr); i++ {
 			res_arr = append(res_arr, sys_arr[i])
 		}
 	}
 
-	row_arr := index.Record_Format["row"].([]*RecordField)
+	row_arr := index.Record_Format["row"].([]*RecordFieldMeta)
 	// fmt.Printf("record_fields,row %v\n", index.Record_Format["row"])
 	if index.Record_Format["row"] != nil {
-		row_arr := index.Record_Format["row"].([]*RecordField)
+		row_arr := index.Record_Format["row"].([]*RecordFieldMeta)
 		for i := 0; i < len(row_arr); i++ {
 			res_arr = append(res_arr, row_arr[i])
 		}
@@ -448,7 +448,7 @@ func (index *Index) record(offset uint64) *Record {
 			var keyLen uint64
 			for i := 0; i < len(key_arr); i++ {
 				f := key_arr[i]
-				p := fmap[f.position]
+				p := fmap[f.Position]
 
 				filed_value, len := f.Value(offset, this_record, index)
 
@@ -456,13 +456,13 @@ func (index *Index) record(offset uint64) *Record {
 
 				offset = offset + len
 				var f_name string
-				switch f.data_type.(type) {
+				switch f.DataType.(type) {
 				case *TransactionIdType:
-					f_name = f.data_type.(*TransactionIdType).name
+					f_name = f.DataType.(*TransactionIdType).name
 				case *IntegerType:
-					f_name = f.data_type.(*IntegerType).name
+					f_name = f.DataType.(*IntegerType).name
 				}
-				fieldDescriptor := NewFieldDescriptor(f.name, f_name, filed_value, f.extern(int64(offset), index, this_record))
+				fieldDescriptor := NewFieldDescriptor(f.Name, f_name, filed_value, f.extern(int64(offset), index, this_record))
 				switch p {
 				case "key":
 					keys = append(keys, fieldDescriptor)
@@ -487,20 +487,20 @@ func (index *Index) record(offset uint64) *Record {
 
 			for i := 0; i < len(row_arr); i++ {
 				f := row_arr[i]
-				p := fmap[f.position]
+				p := fmap[f.Position]
 				//get value exception unkown data type===> &{ 0 false}
 
 				filed_value, len := f.Value(offset, this_record, index)
 				offset = offset + len
 
 				var f_name string
-				switch f.data_type.(type) {
+				switch f.DataType.(type) {
 				case *TransactionIdType:
-					f_name = f.data_type.(*TransactionIdType).name
+					f_name = f.DataType.(*TransactionIdType).name
 				case *IntegerType:
-					f_name = f.data_type.(*IntegerType).name
+					f_name = f.DataType.(*IntegerType).name
 				}
-				fieldDescriptor := NewFieldDescriptor(f.name, f_name, filed_value, f.extern(int64(offset), index, this_record))
+				fieldDescriptor := NewFieldDescriptor(f.Name, f_name, filed_value, f.extern(int64(offset), index, this_record))
 				switch p {
 				case "key":
 					keys = append(keys, fieldDescriptor)
@@ -516,14 +516,14 @@ func (index *Index) record(offset uint64) *Record {
 			this_record.sys = syss
 			//叶子结点的系统字段
 			for i := 0; i < len(this_record.sys); i++ {
-				switch this_record.sys[i].name {
+				switch this_record.sys[i].FieldMeta.Name {
 				case "DB_TRX_ID":
 					// if len(this_record.sys[i].value.(uint64)) == 0 {
 					// 	this_record.transaction_id = 0
 					// } else {
 					// 	this_record.transaction_id = uint64(this_record.sys[i].value.([]uint8)[0])
 					// }
-					this_record.Transaction_id = this_record.sys[i].value.(uint64)
+					this_record.Transaction_id = this_record.sys[i].Value.(uint64)
 					Log.Info("record this record's transaction_id is =======> %+v\n", this_record.Transaction_id)
 				case "DB_ROLL_PTR":
 					// if len(this_record.sys[i].value.([]uint8)) == 0 {
@@ -531,7 +531,7 @@ func (index *Index) record(offset uint64) *Record {
 					// } else {
 					// 	this_record.roll_pointer = uint64(this_record.sys[i].value.([]uint8)[0])
 					// }
-					this_record.Roll_pointer = this_record.sys[i].value.(*Pointer)
+					this_record.Roll_pointer = this_record.sys[i].Value.(*Pointer)
 
 				}
 
@@ -755,24 +755,24 @@ func (index *Index) Record_Header_Redundant_Additional(header *RecordHeader, off
 		all_fields, _, _ := index.Get_Record_Fields_From_Format()
 		for i := 0; i < len(all_fields); i++ {
 			f := all_fields[i]
-			if f.position >= len(lengths) {
-				header.Lengths[f.name] = -1
+			if f.Position >= len(lengths) {
+				header.Lengths[f.Name] = -1
 			} else {
-				header.Lengths[f.name] = lengths[f.position]
+				header.Lengths[f.Name] = lengths[f.Position]
 			}
 
-			if f.position >= len(nulls) {
+			if f.Position >= len(nulls) {
 				header.Nulls = header.Nulls + ""
 			} else {
-				if nulls[f.position] {
-					header.Nulls = header.Nulls + f.name
+				if nulls[f.Position] {
+					header.Nulls = header.Nulls + f.Name
 				}
 			}
-			if f.position >= len(externs) {
+			if f.Position >= len(externs) {
 				header.Externs = header.Externs + ""
 			} else {
-				if externs[f.position] {
-					header.Externs = header.Externs + f.name
+				if externs[f.Position] {
+					header.Externs = header.Externs + f.Name
 				}
 			}
 

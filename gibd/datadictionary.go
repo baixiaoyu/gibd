@@ -7,99 +7,99 @@ import (
 )
 
 type SysTablesPrimary struct {
-	TAB_TYPE     string `json:"tab_type"`
-	NAME         Field  `json:"name"`
-	ID           Field  `json:"id"`
-	N_COLS       Field  `json:"n_cols"`
-	TYPE         Field  `json:"type"`
-	MIX_ID       Field  `json:"mix_id"`
-	MIX_LEN      Field  `json:"mix_len"`
-	CLUSTER_NAME Field  `json:"clcuster_name"`
-	SPACE        Field  `json:"space"`
+	TAB_TYPE     string          `json:"tab_type"`
+	NAME         RecordFieldMeta `json:"name"`
+	ID           RecordFieldMeta `json:"id"`
+	N_COLS       RecordFieldMeta `json:"n_cols"`
+	TYPE         RecordFieldMeta `json:"type"`
+	MIX_ID       RecordFieldMeta `json:"mix_id"`
+	MIX_LEN      RecordFieldMeta `json:"mix_len"`
+	CLUSTER_NAME RecordFieldMeta `json:"clcuster_name"`
+	SPACE        RecordFieldMeta `json:"space"`
 }
 
 func NewSysTablesPrimary() *SysTablesPrimary {
-	field_name := Field{"NAME", "VARCHAR(100)", "", "NOT_NULL", 100, true}
-	field_id := Field{"ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_n_cols := Field{"N_COLS", "INT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_type := Field{"TYPE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_mix_id := Field{"MIX_ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_mix_len := Field{"MIX_LEN", "INT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_cluster_name := Field{"CLUSTER_NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
-	field_space := Field{"SPACE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_name := RecordFieldMeta{Name: "NAME", DataType: "VARCHAR(100)", Properties: "", Nullable: false, Length: 100, IsKey: true}
+	field_id := RecordFieldMeta{Name: "ID", DataType: "BIGINT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_n_cols := RecordFieldMeta{Name: "N_COLS", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_type := RecordFieldMeta{Name: "TYPE", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_mix_id := RecordFieldMeta{Name: "MIX_ID", DataType: "BIGINT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_mix_len := RecordFieldMeta{Name: "MIX_LEN", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_cluster_name := RecordFieldMeta{Name: "CLUSTER_NAME", DataType: "VARCHAR(100)", Properties: "", Nullable: false, Length: 100, IsKey: false}
+	field_space := RecordFieldMeta{Name: "SPACE", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
 	return &SysTablesPrimary{"clustered", field_name, field_id, field_n_cols, field_type, field_mix_id, field_mix_len, field_cluster_name, field_space}
 }
 
 type SysTablesId struct {
 	TAB_TYPE string
-	ID       Field
-	NAME     Field
+	ID       RecordFieldMeta
+	NAME     RecordFieldMeta
 }
 
 func NewSysTablesId() *SysTablesId {
-	field_name := Field{"NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
-	field_id := Field{"ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, true}
+	field_name := RecordFieldMeta{Name: "NAME", DataType: "VARCHAR(100)", Properties: "", Nullable: false, Length: 100, IsKey: false}
+	field_id := RecordFieldMeta{Name: "ID", DataType: "BIGINT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: true}
 
 	return &SysTablesId{"secondary", field_name, field_id}
 }
 
 type SysColumnsPrimary struct {
-	TAB_TYPE string `json:"tab_type"`
-	TABLE_ID Field  `json:"table_id"`
-	POS      Field  `json:"pos"`
-	NAME     Field  `json:"name"`
-	MTYPE    Field  `json:"mtype"`
-	PRTYPE   Field  `json:"prtype"`
-	LEN      Field  `json:"len"`
-	PREC     Field  `json:"prec"`
+	TAB_TYPE string          `json:"tab_type"`
+	TABLE_ID RecordFieldMeta `json:"table_id"`
+	POS      RecordFieldMeta `json:"pos"`
+	NAME     RecordFieldMeta `json:"name"`
+	MTYPE    RecordFieldMeta `json:"mtype"`
+	PRTYPE   RecordFieldMeta `json:"prtype"`
+	LEN      RecordFieldMeta `json:"len"`
+	PREC     RecordFieldMeta `json:"prec"`
 }
 
 func NewSysColumnsPrimary() *SysColumnsPrimary {
-	field_table_id := Field{"TABLE_ID", "BIGINT", "", "NOT_NULL", 0, true}
-	field_pos := Field{"POS", "INT", "UNSIGNED", "NOT_NULL", 0, true}
-	field_name := Field{"NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
-	field_mtype := Field{"MTYPE", "INT", "", "NOT_NULL", 0, false}
-	field_prtype := Field{"PRTYPE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_len := Field{"LEN", "INT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_prec := Field{"PREC", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_table_id := RecordFieldMeta{Name: "TABLE_ID", DataType: "BIGINT", Properties: "", Nullable: false, Length: 0, IsKey: true}
+	field_pos := RecordFieldMeta{Name: "POS", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: true}
+	field_name := RecordFieldMeta{Name: "NAME", DataType: "VARCHAR(100)", Properties: "", Nullable: false, Length: 100, IsKey: false}
+	field_mtype := RecordFieldMeta{Name: "MTYPE", DataType: "INT", Properties: "", Nullable: false, Length: 0, IsKey: false}
+	field_prtype := RecordFieldMeta{Name: "PRTYPE", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_len := RecordFieldMeta{Name: "LEN", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_prec := RecordFieldMeta{Name: "PREC", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
 
 	return &SysColumnsPrimary{"clustered", field_table_id, field_pos, field_name, field_mtype, field_prtype, field_len, field_prec}
 }
 
 type SysIndexesPrimary struct {
-	TAB_TYPE string `json:"tab_type"`
-	TABLE_ID Field  `json:"table_id"`
-	ID       Field  `json:"id"`
-	NAME     Field  `json:"name"`
-	N_FIELDS Field  `json:"n_fields"`
-	TYPE     Field  `json:"type"`
-	SPACE    Field  `json:"space"`
-	PAGE_NO  Field  `json:"page_no"`
+	TAB_TYPE string          `json:"tab_type"`
+	TABLE_ID RecordFieldMeta `json:"table_id"`
+	ID       RecordFieldMeta `json:"id"`
+	NAME     RecordFieldMeta `json:"name"`
+	N_FIELDS RecordFieldMeta `json:"n_fields"`
+	TYPE     RecordFieldMeta `json:"type"`
+	SPACE    RecordFieldMeta `json:"space"`
+	PAGE_NO  RecordFieldMeta `json:"page_no"`
 }
 
 func NewSysIndexesPrimary() *SysIndexesPrimary {
-	field_table_id := Field{"TABLE_ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, true}
-	field_id := Field{"ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, true}
-	field_name := Field{"NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
-	field_n_field := Field{"N_FIELDS", "INT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_type := Field{"TYPE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_space := Field{"SPACE", "INT", "UNSIGNED", "NOT_NULL", 0, false}
-	field_page_no := Field{"PAGE_NO", "INT", "UNSIGNED", "NOT_NULL", 0, false}
+	field_table_id := RecordFieldMeta{Name: "TABLE_ID", DataType: "BIGINT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: true}
+	field_id := RecordFieldMeta{Name: "ID", DataType: "BIGINT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: true}
+	field_name := RecordFieldMeta{Name: "NAME", DataType: "VARCHAR(100)", Properties: "", Nullable: false, Length: 100, IsKey: false}
+	field_n_field := RecordFieldMeta{Name: "N_FIELDS", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_type := RecordFieldMeta{Name: "TYPE", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_space := RecordFieldMeta{Name: "SPACE", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
+	field_page_no := RecordFieldMeta{Name: "PAGE_NO", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: false}
 
 	return &SysIndexesPrimary{"clustered", field_table_id, field_id, field_name, field_n_field, field_type, field_space, field_page_no}
 }
 
 type SysFieldsPrimary struct {
-	TAB_TYPE string `json:"tab_type"`
-	INDEX_ID Field  `json:"index_id"`
-	POS      Field  `json:"pos"`
-	COL_NAME Field  `json:"col_name"`
+	TAB_TYPE string          `json:"tab_type"`
+	INDEX_ID RecordFieldMeta `json:"index_id"`
+	POS      RecordFieldMeta `json:"pos"`
+	COL_NAME RecordFieldMeta `json:"col_name"`
 }
 
 func NewSysFieldsPrimary() *SysFieldsPrimary {
-	field_index_id := Field{"INDEX_ID", "BIGINT", "UNSIGNED", "NOT_NULL", 0, true}
-	field_pos := Field{"POS", "INT", "UNSIGNED", "NOT_NULL", 0, true}
-	field_col_name := Field{"COL_NAME", "VARCHAR(100)", "", "NOT_NULL", 100, false}
+	field_index_id := RecordFieldMeta{Name: "INDEX_ID", DataType: "BIGINT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: true}
+	field_pos := RecordFieldMeta{Name: "POS", DataType: "INT", Properties: "UNSIGNED", Nullable: false, Length: 0, IsKey: true}
+	field_col_name := RecordFieldMeta{Name: "COL_NAME", DataType: "VARCHAR(100)", Properties: "", Nullable: false, Length: 100, IsKey: false}
 
 	return &SysFieldsPrimary{"clustered", field_index_id, field_pos, field_col_name}
 }

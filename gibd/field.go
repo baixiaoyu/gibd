@@ -19,43 +19,34 @@ func NewExternReference(space_id uint64, page_number uint64, offset uint64, leng
 	return &ExternReference{space_id: space_id, page_number: page_number, offset: offset, length: length}
 }
 
-// 列名以及对应的值,此处应该包含RecordField 对象，不是进行重复定义
+// 列定义以及对应的值,此处应该包含RecordField 对象
 type FieldDescriptor struct {
-	name       string
-	field_type string
-	value      interface{}
-	extern     *ExternReference
+	FieldMeta *RecordFieldMeta
+	Value     interface{}
 }
 
 func NewFieldDescriptor(name string, field_type string, value interface{}, extern *ExternReference) *FieldDescriptor {
+	fieldMeta := &RecordFieldMeta{Name: name, DataType: field_type, Extern: extern}
 	return &FieldDescriptor{
-		name:       name,
-		field_type: field_type,
-		value:      value,
-		extern:     extern,
+		FieldMeta: fieldMeta,
+		Value:     value,
 	}
 }
 
-type Field struct {
-	FieldName string `json:"fieldname"`
-	// FieldDesc string `json:"fieldesc"`
-	DataType   string `json:"datatype"`
-	Properties string `json:Properties`
-	IsNull     string `json:"isnull"`
-	Length     int    `json:"length"`
-	Is_key     bool   `json:"is_key"`
+//  字段定义以及元数据信息
+type RecordFieldMeta struct {
+	Extern   *ExternReference
+	Position int
+	Name     string
+	//数据类型是实现的类型对象
+	DataType   interface{}
+	Nullable   bool
+	IsKey      bool
+	Length     int
+	Properties string
 }
 
-// Field 这两个冲突
-type RecordField struct {
-	Extern    ExternReference
-	position  int
-	name      string
-	data_type interface{}
-	nullable  bool
-}
-
-func NewRecordField(position int, name string, type_definition string, properties string) *RecordField {
+func NewRecordFieldMeta(position int, name string, type_definition string, properties string) *RecordFieldMeta {
 	nullable := true
 
 	result := strings.Index(properties, "NOT_NULL")
@@ -68,27 +59,27 @@ func NewRecordField(position int, name string, type_definition string, propertie
 
 	base_type, modifiers := Parse_Type_Definition(type_definition)
 	data_type, _ := NewDataType(base_type, modifiers, properties)
-	return &RecordField{
-		position: position, name: name, data_type: data_type, nullable: nullable,
+	return &RecordFieldMeta{
+		Position: position, Name: name, DataType: data_type, Nullable: nullable,
 	}
 }
 
-func (rf *RecordField) Is_Nullable(record *Record) bool {
-	return rf.nullable
+func (rf *RecordFieldMeta) Is_Nullable(record *Record) bool {
+	return rf.Nullable
 }
 
-func (rf *RecordField) Is_Variable() bool {
+func (rf *RecordFieldMeta) Is_Variable() bool {
 	types := []string{"BlobType", "VariableBinaryType", "VariableCharacterType"}
 	for _, element := range types {
-		if rf.data_type == element {
+		if rf.DataType == element {
 			return true
 		}
 	}
 	return false
 }
 
-func (rf *RecordField) Is_Blob() bool {
-	if rf.data_type == "BlobType" {
+func (rf *RecordFieldMeta) Is_Blob() bool {
+	if rf.DataType == "BlobType" {
 		return true
 	}
 	return false
@@ -109,7 +100,7 @@ func Parse_Type_Definition(type_definition string) (string, string) {
 
 }
 
-func (rf *RecordField) Value(offset uint64, record *UserRecord, index *Index) (interface{}, uint64) {
+func (rf *RecordFieldMeta) Value(offset uint64, record *UserRecord, index *Index) (interface{}, uint64) {
 	if record == nil {
 		return nil, 0
 	}
@@ -117,20 +108,20 @@ func (rf *RecordField) Value(offset uint64, record *UserRecord, index *Index) (i
 	return rf.Value_By_Length(offset, rf.length(record), index)
 }
 
-func (rf *RecordField) Value_By_Length(offset uint64, field_length int64, index *Index) (interface{}, uint64) {
+func (rf *RecordFieldMeta) Value_By_Length(offset uint64, field_length int64, index *Index) (interface{}, uint64) {
 
-	switch rf.data_type.(type) {
+	switch rf.DataType.(type) {
 	case *IntegerType:
-		return rf.data_type.(*IntegerType).Value(rf.Read(offset, field_length, index), index), uint64(field_length)
+		return rf.DataType.(*IntegerType).Value(rf.Read(offset, field_length, index), index), uint64(field_length)
 	case *TransactionIdType:
-		return rf.data_type.(*TransactionIdType).Read(offset, index.Page), 6
+		return rf.DataType.(*TransactionIdType).Read(offset, index.Page), 6
 	case *RollPointerType:
 		bytes := rf.Read(offset, field_length, index)
 
-		return rf.data_type.(*RollPointerType).Value(bytes), uint64(field_length)
+		return rf.DataType.(*RollPointerType).Value(bytes), uint64(field_length)
 	case *VariableCharacterType:
 
-		return rf.data_type.(*VariableCharacterType).Value(string(rf.Read(offset, field_length, index))), uint64(field_length)
+		return rf.DataType.(*VariableCharacterType).Value(string(rf.Read(offset, field_length, index))), uint64(field_length)
 	default:
 		Log.Info("value_by_length() 还未实现的类型========%\n")
 	}
@@ -139,24 +130,24 @@ func (rf *RecordField) Value_By_Length(offset uint64, field_length int64, index 
 
 }
 
-func (rf *RecordField) length(record *UserRecord) int64 {
+func (rf *RecordFieldMeta) length(record *UserRecord) int64 {
 	var len int64
 	//字段名称在header中，这个字段是变长的字符串，需要在header 中获取长度信息
 	name_in_header_lengths_map := false
 	for k, _ := range record.header.Lengths {
-		if rf.name == string(k) {
+		if rf.Name == string(k) {
 			name_in_header_lengths_map = true
 		}
 	}
 	// name_in_header_lengths_map = false //暂时设置
 	if name_in_header_lengths_map {
-		len = int64(record.header.Lengths[rf.name])
+		len = int64(record.header.Lengths[rf.Name])
 	} else {
-		switch value := rf.data_type.(type) {
+		switch value := rf.DataType.(type) {
 		case *IntegerType:
-			len = int64(rf.data_type.(*IntegerType).width)
+			len = int64(rf.DataType.(*IntegerType).width)
 		case *BitType:
-			len = int64(rf.data_type.(*BitType).width)
+			len = int64(rf.DataType.(*BitType).width)
 		// case *VariableCharacterType:
 		// 	//此处的变长字段长度值，需要在record header 中的variable field lengths中获取
 		// 	len = int64(rf.data_type.(*VariableCharacterType).width)
@@ -171,23 +162,23 @@ func (rf *RecordField) length(record *UserRecord) int64 {
 	return len
 }
 
-func (rf *RecordField) Is_Extern(record *UserRecord) bool {
+func (rf *RecordFieldMeta) Is_Extern(record *UserRecord) bool {
 	for i := 0; i < len(record.header.Externs); i++ {
-		if rf.name == string(record.header.Externs[i]) {
+		if rf.Name == string(record.header.Externs[i]) {
 			return true
 		}
 	}
 	return false
 }
 
-func (rf *RecordField) extern(offset int64, index *Index, record *UserRecord) *ExternReference {
+func (rf *RecordFieldMeta) extern(offset int64, index *Index, record *UserRecord) *ExternReference {
 	if rf.Is_Extern(record) {
 		return rf.Read_Extern(offset, index)
 	}
 	return nil
 }
 
-func (rf *RecordField) Read_Extern(offset int64, index *Index) *ExternReference {
+func (rf *RecordFieldMeta) Read_Extern(offset int64, index *Index) *ExternReference {
 	space_id := BufferReadAt(index.Page, offset, 4)
 	page_number := BufferReadAt(index.Page, offset+4, 4)
 	e_offset := BufferReadAt(index.Page, offset+8, 4)
@@ -195,7 +186,7 @@ func (rf *RecordField) Read_Extern(offset int64, index *Index) *ExternReference 
 	return NewExternReference(uint64(space_id), uint64(page_number), uint64(e_offset), uint64(length))
 }
 
-func (rf *RecordField) Has_Method(data_type interface{}, method_name string) bool {
+func (rf *RecordFieldMeta) Has_Method(data_type interface{}, method_name string) bool {
 
 	switch value := data_type.(type) {
 	case IntegerType:
@@ -214,7 +205,7 @@ func (rf *RecordField) Has_Method(data_type interface{}, method_name string) boo
 	return false
 }
 
-func (rf *RecordField) Read(offset uint64, field_length int64, index *Index) []byte {
+func (rf *RecordFieldMeta) Read(offset uint64, field_length int64, index *Index) []byte {
 
 	return (ReadBytes(index.Page, int64(offset), field_length))
 }
