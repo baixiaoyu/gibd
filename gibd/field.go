@@ -39,9 +39,10 @@ type RecordFieldMeta struct {
 	Position int
 	Name     string
 	//数据类型是实现的类型对象
-	DataType   interface{}
-	Nullable   bool
-	IsKey      bool
+	DataType interface{}
+	Nullable bool
+	IsKey    bool
+	// char varchar字段 字符长度
 	Length     int
 	Properties string
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 // 记录描述符这应该重构下，描述符这有点混乱
@@ -17,8 +18,7 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 	description := index.Get_Record_Describer()
 	fields := make(map[string]string)
 
-	var ruby_description map[string]interface{}
-	//需要在这里把description格式调整成ruby的格式，统一下后续好处理
+	var field_map_description map[string]interface{}
 
 	switch description.(type) {
 	case *SysTablesPrimary:
@@ -26,14 +26,14 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 		description := description.(*SysTablesPrimary)
 		fields["type"] = description.TAB_TYPE
 
-		//转化成ruby那样的格式，统一下，要不后续不好处理
-		ruby_description = Restruct_Describer(*description)
+		//转化格式，统一下，要不后续不好处理
+		field_map_description = Restruct_Describer(*description)
 
 		var counter int
 		counter = 0
 
 		var key_arr []*RecordFieldMeta
-		for _, v := range ruby_description["key"].([]interface{}) {
+		for _, v := range field_map_description["key"].([]interface{}) {
 			//key_arr = []*Recordfield{}
 
 			value := v.(map[string]interface{})
@@ -49,11 +49,11 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			counter = counter + 1
 		}
 
-		ruby_description["key"] = key_arr
+		field_map_description["key"] = key_arr
 
 		//叶子结点加上系统字段
 		var sys_arr []*RecordFieldMeta
-		if index.IsLeaf() && ruby_description["tab_type"] == "clustered" {
+		if index.IsLeaf() && field_map_description["tab_type"] == "clustered" {
 
 			DB_TRX_ID := NewRecordFieldMeta(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
 			fmap[counter] = "sys"
@@ -64,12 +64,12 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			counter = counter + 1
 			sys_arr = append(sys_arr, DB_ROLL_PTR)
 
-			ruby_description["sys"] = sys_arr
+			field_map_description["sys"] = sys_arr
 		}
 
 		var row_arr []*RecordFieldMeta
-		if (ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
-			for _, v := range ruby_description["row"].([]interface{}) {
+		if (field_map_description["tab_type"] == "clustered") || (field_map_description["tab_type"] == "secondary") {
+			for _, v := range field_map_description["row"].([]interface{}) {
 				value := v.(map[string]interface{})
 				name := value["name"].(string)
 				prop := value["type"].([]interface{})
@@ -85,20 +85,20 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 
 			}
 
-			ruby_description["row"] = row_arr
+			field_map_description["row"] = row_arr
 		}
 
-		return ruby_description
+		return field_map_description
 	case *SysIndexesPrimary:
 		description := description.(*SysIndexesPrimary)
 
-		//转化成ruby那样的格式，统一下，要不后续不好处理
-		ruby_description = Restruct_Describer(*description)
+		//转化格式，统一下，要不后续不好处理
+		field_map_description = Restruct_Describer(*description)
 		var counter int
 		counter = 0
 
 		var key_arr []*RecordFieldMeta
-		for _, v := range ruby_description["key"].([]interface{}) {
+		for _, v := range field_map_description["key"].([]interface{}) {
 
 			value := v.(map[string]interface{})
 			prop := value["type"].([]interface{})
@@ -113,11 +113,11 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			counter = counter + 1
 		}
 
-		ruby_description["key"] = key_arr
+		field_map_description["key"] = key_arr
 
 		var sys_arr []*RecordFieldMeta
 		// 叶子结点加上回滚段和事务id的值
-		if index.IsLeaf() && ruby_description["tab_type"] == "clustered" {
+		if index.IsLeaf() && field_map_description["tab_type"] == "clustered" {
 
 			DB_TRX_ID := NewRecordFieldMeta(position[counter], "DB_TRX_ID", "TRX_ID", "NOT_NULL")
 			fmap[counter] = "sys"
@@ -128,12 +128,12 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 			counter = counter + 1
 			sys_arr = append(sys_arr, DB_ROLL_PTR)
 
-			ruby_description["sys"] = sys_arr
+			field_map_description["sys"] = sys_arr
 		}
 
 		var row_arr []*RecordFieldMeta
-		if (ruby_description["tab_type"] == "clustered") || (ruby_description["tab_type"] == "secondary") {
-			for _, v := range ruby_description["row"].([]interface{}) {
+		if (field_map_description["tab_type"] == "clustered") || (field_map_description["tab_type"] == "secondary") {
+			for _, v := range field_map_description["row"].([]interface{}) {
 				value := v.(map[string]interface{})
 				name := value["name"].(string)
 				prop := value["type"].([]interface{})
@@ -148,17 +148,19 @@ func (index *Index) Make_Record_Description() map[string]interface{} {
 
 			}
 
-			ruby_description["row"] = row_arr
+			field_map_description["row"] = row_arr
 		}
-		return ruby_description
+		return field_map_description
 
 	default:
 		fmt.Printf("\n")
 	}
 
-	return ruby_description
+	return field_map_description
 }
 
+//将字段转换成map 格式，并且分开，key和普通的字段
+// 转换后的格式map[key:[*recordFieldMeta...],row:[*recordFieldMeta...],tab_type:""]
 func Restruct_Describer(a interface{}) map[string]interface{} {
 
 	typ := reflect.TypeOf(a)
@@ -190,16 +192,13 @@ func Restruct_Describer(a interface{}) map[string]interface{} {
 				str_type = `{"tab_type":"` + x + `",`
 			} else {
 				fieldstr := val.Field(i).Interface().(RecordFieldMeta)
-				var nullstring string
-				if fieldstr.Nullable {
-					nullstring = "null"
-				} else {
-					nullstring = "not null"
-				}
+
 				if fieldstr.IsKey {
-					str_key += `{"name":"` + fieldstr.Name + `",` + `"type":["` + fieldstr.DataType.(string) + `","` + fieldstr.Properties + `","` + nullstring + `"]},`
+
+					str_key += `{"name":"` + fieldstr.Name + `",` + `"type":["` + fieldstr.DataType.(string) + `","` + fieldstr.Properties + `"],` + `"nullable":["` + strconv.FormatBool(fieldstr.Nullable) + `"],` + `"length":["` + strconv.Itoa(fieldstr.Length) + `"],` + `"position":["` + strconv.Itoa(fieldstr.Position) + `"],` + `"iskey":["` + strconv.FormatBool(fieldstr.IsKey) + `"]},`
 				} else {
-					str_row += `{"name":"` + fieldstr.Name + `",` + `"type":["` + fieldstr.DataType.(string) + `","` + fieldstr.Properties + `","` + nullstring + `"]},`
+
+					str_row += `{"name":"` + fieldstr.Name + `",` + `"type":["` + fieldstr.DataType.(string) + `","` + fieldstr.Properties + `"],` + `"nullable":["` + strconv.FormatBool(fieldstr.Nullable) + `"],` + `"length":["` + strconv.Itoa(fieldstr.Length) + `"],` + `"position":["` + strconv.Itoa(fieldstr.Position) + `"],` + `"iskey":["` + strconv.FormatBool(fieldstr.IsKey) + `"]},`
 				}
 			}
 		}

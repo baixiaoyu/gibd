@@ -144,7 +144,6 @@ func (dh *DataDictionary) Get_Each_Table_Name() []map[string]interface{} {
 
 		all_record_field_value_map = append(all_record_field_value_map, res[i].Get_Fields_And_Value_Map())
 	}
-	fmt.Printf("each_table=====>length is:%+v\n", len(all_record_field_value_map))
 
 	return all_record_field_value_map
 }
@@ -331,7 +330,11 @@ func Record_Describer_By_Index_Id(dh *DataDictionary, index_id uint64) interface
 			fmt.Println(err)
 		}
 	}()
+	//没有数据字典信息，通过读取配置文件进行解析构造
+	// {clustered {<nil> 0 TABLE_ID BIGINT false true 0 UNSIGNED} {<nil> 0 ID BIGINT false true 0 UNSIGNED} {<nil> 0 NAME VARCHAR(100) false false 100 } {<nil> 0 N_FIELDS INT false false 0 UNSIGNED} {<nil> 0 TYPE INT false false 0 UNSIGNED} {<nil> 0 SPACE INT false false 0 UNSIGNED} {<nil> 0 PAGE_NO INT false false 0 UNSIGNED}}
+	if dh == nil {
 
+	}
 	dd_index := dh.Data_Dictionary_Index_Ids()[index_id]
 	if dd_index != nil {
 		return dh.Data_Dictionary_Index_Describer(dd_index["table"], dd_index["index"])
