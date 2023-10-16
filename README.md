@@ -1,6 +1,6 @@
 # gibd
 ## Introduction
-This project is just for parsing innodb blocks for learning . 
+This project is for parsing innodb blocks . 
 
 ## Usage
 ```
